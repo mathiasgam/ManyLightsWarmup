@@ -26,35 +26,28 @@
 
 #include <cassert>
 #include <thread>
+#include <atomic>
+#include <future>
 
 #include "LightTree.h"
 #include "MortonCode.h"
+
+#include "ImageTile.h"
+
+#include <omp.h>
 
 float random(float min, float max) {
 	return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (max - min)));
 }
 
-TriMesh add_plane(Vec3f position, Vec3f normal) {
-	TriMesh mesh = TriMesh();
-	mesh.geometry.addVertex(position + Vec3f(-10, 0, -10));
-	mesh.geometry.addVertex(position + Vec3f(10, 0, -10));
-	mesh.geometry.addVertex(position + Vec3f(10, 0, 10));
-	mesh.geometry.addVertex(position + Vec3f(-10, 0, 10));
-
-	mesh.geometry.addFace(Vec3ui(0, 1, 2));
-	mesh.geometry.addFace(Vec3ui(0, 2, 3));
-	return mesh;
-}
-
-
 int main() {
-	
+
 	OBJModel model = OBJModel("../models/bunny.obj");
 	std::cout << "bbox: " << model.meshes[0].get_bbox() << "\n";
 	std::cout << "num primitives: " << model.meshes[0].num_primitives() << "\n";
 
-	//model.meshes[0].normalize();
-	//model.meshes[0].translate(Vec3f(0, 2, 0));
+	model.meshes[0].normalize();
+	model.meshes[0].translate(Vec3f(0, 0.5, 0));
 	std::cout << "bbox: " << model.meshes[0].get_bbox() << "\n";
 
 	const Vec3f light_color = Vec3f(255, 241, 224) / 255;
@@ -76,9 +69,9 @@ int main() {
 
 	srand(std::clock());
 
-	SphereGroup spheres = SphereGroup(); 
+	SphereGroup spheres = SphereGroup();
 	for (int i = 0; i < 10; i++) {
-		spheres.addSphere(Vec3f(random(-10,10), random(50,70), random(-10,10)), 0.5f);
+		spheres.addSphere(Vec3f(random(-10, 10), random(50, 70), random(-10, 10)), 0.5f);
 	}
 	Plane ground = Plane(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0, 1, 0));
 
@@ -101,6 +94,8 @@ int main() {
 	//struc.print();
 
 	PinHoleCamera cam = PinHoleCamera();
+	cam.SetPosition(Vec3f(-2.0f, 1.0f, -0.5f));
+	cam.LookAt(Vec3f(0.0f, 0.5f, 0.0f));
 
 
 	int width = 512;
@@ -114,6 +109,85 @@ int main() {
 
 	float epsilon = 0.001f;
 
+	/*std::vector<ImageTile> tiles = std::vector<ImageTile>();
+	{
+		const unsigned int TileSize = 64;
+		const unsigned int NumTilesX = width / TileSize;
+		const unsigned int NumTilesY = height / TileSize;
+
+		for (int i = 0; i < NumTilesX; i++) {
+			const int x = i * TileSize;
+			for (int j = 0; j < NumTilesY; j++) {
+				const int y = j * TileSize;
+
+				tiles.emplace_back(x, y, TileSize, TileSize);
+			}
+		}
+	}*/
+	LightTree* tree = &light_tree;
+
+	std::size_t max = width * height;
+	std::size_t cores = std::thread::hardware_concurrency();
+	volatile std::atomic<std::size_t> count(0);
+	std::vector<std::future<void>> future_vector;
+	while (cores--)
+		future_vector.emplace_back(
+			std::async([=, &cam, &count, &tree, &img, &img_depth]()
+				{
+					while (true)
+					{
+						std::size_t index = count++;
+						if (index >= max)
+							break;
+						std::size_t i = index % width;
+						std::size_t j = index / width;
+						float x = (float)j / width;
+						float y = (float)i / height;
+						float aspect = x / y;
+
+						Ray ray = cam.sample(Vec2f((x - 0.5f) * 2.0f, (y - 0.5f) * 2.0f));
+						HitInfo hit = HitInfo();
+
+						Vec3f dir_frag = Vec3f(1.0f / ray.direction[0], 1.0f / ray.direction[1], 1.0f / ray.direction[2]);
+
+						if (struc.closest_hit(ray, hit)) {
+							Vec3f normal = hit.normal.normalized();
+							if (dot(normal, ray.direction) > 0)
+								normal = -normal;
+
+							Vec3f result = Vec3f(0.0f);
+
+							for (auto light : tree->cut(hit.position, hit.normal, 0.01f)) {
+								Vec3f dir = light.position - hit.position;
+								float dist = dir.length();
+								dir = dir.normalized();
+
+								Ray shadow = Ray(hit.position, dir, epsilon, dist - epsilon);
+								HitInfo shadow_info = HitInfo();
+								if (!struc.any_hit(shadow, shadow_info)) {
+									result += (light.color / (dist * dist)) * fmaxf(dot(normal, dir), 0.0f);
+								}
+							}
+
+							// Add ambient light
+							result += light_color * 0.4f;
+
+							result = min(result, Vec3f(1.0f));
+							img.setPixel(j, i, result);
+						}
+						else {
+							img.setPixel(j, i, Vec3f(0.0f));
+						}
+
+						float f = 1.0f - (1.0f / (hit.trace_depth * 0.01f + 1.0f));
+						img_depth.setPixel(j, i, Vec3f(1.0f - f));
+					}
+				}));
+
+	for (auto& future : future_vector) {
+		future.wait();
+	}
+	/*
 	for (int i = 0; i < height; i++) {
 		for (int j = 0; j < width; j++) {
 			float x = (float)j / width;
@@ -140,7 +214,7 @@ int main() {
 					Ray shadow = Ray(hit.position, dir, epsilon, dist - epsilon);
 					HitInfo shadow_info = HitInfo();
 					if (!struc.any_hit(shadow, shadow_info)) {
-						result += (light.color / (dist*dist)) * fmaxf(dot(normal, dir), 0.0f);
+						result += (light.color / (dist * dist)) * fmaxf(dot(normal, dir), 0.0f);
 					}
 				}
 
@@ -148,20 +222,24 @@ int main() {
 				result += light_color * 0.4f;
 
 				result = min(result, Vec3f(1.0f));
-				img.setPixel(j,i, result);
+				img.setPixel(j, i, result);
 			}
 			else {
 				img.setPixel(j, i, Vec3f(0.0f));
 			}
 
-			float f = 1.0f - (1.0f / (hit.trace_depth*0.01f + 1.0f));
+			float f = 1.0f - (1.0f / (hit.trace_depth * 0.01f + 1.0f));
 			img_depth.setPixel(j, i, Vec3f(1.0f - f));
-			
+
 		}
 	}
 
+
+	*/
+
+
 	std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC) << " s" << std::endl;
-	
-	img.save_as("../results/Test.png");
-	img_depth.save_as("../results/Trace_depth.png");
+
+	img.save_as("Test.png");
+	img_depth.save_as("Trace_depth.png");
 }

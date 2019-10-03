@@ -10,9 +10,10 @@ public:
 	Camera();
 	~Camera();
 
-	virtual Ray sample(Vec2f f) = 0;
+	virtual Ray sample(Vec2f f) const = 0;
 
 protected:
 	
 };
+
 

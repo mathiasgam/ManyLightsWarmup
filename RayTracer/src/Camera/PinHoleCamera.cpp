@@ -2,13 +2,16 @@
 
 
 
-PinHoleCamera::PinHoleCamera():
-	position(-1,1.5,3), direction(-1,0,0), w(0.2f), h(0.2f), n(0.5f)
+void PinHoleCamera::UpdateTangents()
 {
-	direction = Vec3f(0, 0.5f, 0) - position;
-	direction = direction.normalized();
 	tangent_w = cross(direction, Vec3f(0, 1, 0));
 	tangent_h = cross(direction, tangent_w);
+}
+
+PinHoleCamera::PinHoleCamera():
+	position(0.0f,0.0f,0.0f), direction(1.0f,0.0f,0.0f), w(0.2f), h(0.2f), n(0.5f)
+{
+	UpdateTangents();
 }
 
 
@@ -16,7 +19,18 @@ PinHoleCamera::~PinHoleCamera()
 {
 }
 
-Ray PinHoleCamera::sample(Vec2f f)
+void PinHoleCamera::SetPosition(Vec3f _position)
+{
+	position = _position;
+}
+
+void PinHoleCamera::SetDirection(Vec3f _direction)
+{
+	direction = _direction;
+	UpdateTangents();
+}
+
+Ray PinHoleCamera::sample(Vec2f f) const
 {
 	Vec3f center = position;
 
@@ -24,4 +38,10 @@ Ray PinHoleCamera::sample(Vec2f f)
 	dir = dir.normalized();
 
 	return Ray(center, dir, 0, 1000);
+}
+
+void PinHoleCamera::LookAt(Vec3f at)
+{
+	direction = (at - position).normalized();
+	UpdateTangents();
 }
