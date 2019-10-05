@@ -42,19 +42,19 @@ float random(float min, float max) {
 
 int main() {
 
-	OBJModel model = OBJModel("../models/bunny.obj");
+	OBJModel model = OBJModel("../models/dragon.obj");
 	std::cout << "bbox: " << model.meshes[0].get_bbox() << "\n";
 	std::cout << "num primitives: " << model.meshes[0].num_primitives() << "\n";
 
 	model.meshes[0].normalize();
-	model.meshes[0].translate(Vec3f(0, 0.5, 0));
+	model.meshes[0].translate(Vec3f(1, 0.5, -0.5));
 	std::cout << "bbox: " << model.meshes[0].get_bbox() << "\n";
 
 	const Vec3f light_color = Vec3f(255, 241, 224) / 255;
 	std::vector<PointLight> lights = std::vector<PointLight>();
 	{
 		const float intensity = 70;
-		const int num = 5;
+		const int num = 1;
 		for (int i = 0; i < num; i++) {
 			for (int j = 0; j < num; j++) {
 				Vec3f position = Vec3f((float)i - ((float)num / 2.0f), 10, (float)j - ((float)num / 2.0f));
@@ -69,18 +69,17 @@ int main() {
 
 	srand(std::clock());
 
-	SphereGroup spheres = SphereGroup();
-	for (int i = 0; i < 10; i++) {
-		spheres.addSphere(Vec3f(random(-10, 10), random(50, 70), random(-10, 10)), 0.5f);
-	}
 	Plane ground = Plane(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0, 1, 0));
+
+	OBJModel bunny = OBJModel("../models/bunny.obj");
+	bunny.meshes[0].normalize();
+	bunny.meshes[0].translate(Vec3f(1.0, 0.5, 1.0));
 
 	std::vector<const Geometry*> geometry(0);
 	std::vector<const Plane*> planes(0);
-	//geometry.push_back(&spheres);
 	geometry.push_back(&model.meshes[0]);
+	geometry.push_back(&bunny.meshes[0]);
 	planes.push_back(&ground);
-	//geometry.push_back(&plane);
 
 	std::clock_t start;
 	start = std::clock();
@@ -127,12 +126,16 @@ int main() {
 	LightTree* tree = &light_tree;
 
 	std::size_t max = width * height;
+
+	// find the number of cores available
 	std::size_t cores = std::thread::hardware_concurrency();
 	volatile std::atomic<std::size_t> count(0);
 	std::vector<std::future<void>> future_vector;
+
+	// add Async processies until all cores have one
 	while (cores--)
 		future_vector.emplace_back(
-			std::async([=, &cam, &count, &tree, &img, &img_depth]()
+			std::async([=, &cam, &count, &img, &img_depth]()
 				{
 					while (true)
 					{
@@ -184,6 +187,7 @@ int main() {
 					}
 				}));
 
+	// Wait for all pixels to be processed
 	for (auto& future : future_vector) {
 		future.wait();
 	}

@@ -24,7 +24,7 @@ private:
 		}
 	};
 
-	LightNode* root;
+	LightNode* root = nullptr;
 	std::vector<PointLight> m_lights;
 
 public:
