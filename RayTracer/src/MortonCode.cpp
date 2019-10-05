@@ -1,5 +1,7 @@
 #include "MortonCode.h"
 
+#include <intrin.h>
+
 MortonCode3::MortonCode3()
 {
 	data = 0;
@@ -29,6 +31,11 @@ bool MortonCode3::operator<(const MortonCode3& other) const
 bool MortonCode3::operator>(const MortonCode3& other) const
 {
 	return data > other.data;
+}
+
+unsigned int clz(uint64_t code)
+{
+	return __lzcnt64(code);
 }
 
 uint64_t MortonCode3::SplitBy3(uint64_t x)

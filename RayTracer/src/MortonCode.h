@@ -26,6 +26,8 @@ private:
 	static inline uint64_t SplitBy3(uint64_t);
 };
 
+unsigned int clz(uint64_t code);
+
 inline std::ostream& operator<<(std::ostream& os, const MortonCode3& code)
 {
 	os << "(" << std::bitset<64>(code.data) << ")";

@@ -4,6 +4,7 @@
 #include "Structure/ArraySphereStructure.h"
 #include "Structure/BVHSphereStructure.h"
 #include "Structure/SAHBVHStructure.h"
+#include "Structure/LBVHStructure.h"
 
 #include "PointLight.h"
 
@@ -42,7 +43,7 @@ float random(float min, float max) {
 
 int main() {
 
-	OBJModel model = OBJModel("../models/dragon.obj");
+	OBJModel model = OBJModel("../models/buddha.obj");
 	std::cout << "bbox: " << model.meshes[0].get_bbox() << "\n";
 	std::cout << "num primitives: " << model.meshes[0].num_primitives() << "\n";
 
@@ -71,7 +72,7 @@ int main() {
 
 	Plane ground = Plane(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0, 1, 0));
 
-	OBJModel bunny = OBJModel("../models/bunny.obj");
+	OBJModel bunny = OBJModel("../models/dragon.obj");
 	bunny.meshes[0].normalize();
 	bunny.meshes[0].translate(Vec3f(1.0, 0.5, 1.0));
 
@@ -85,7 +86,7 @@ int main() {
 	start = std::clock();
 	std::cout << "creating structure\n";
 	//auto struc = ArraySphereStructure(spheres);
-	auto struc = SAHBVHStructure();
+	auto struc = LBVHStructure();
 	struc.init(geometry, planes);
 
 	std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC) << " s" << std::endl;

@@ -9,6 +9,7 @@ public:
 	Structure();
 	virtual ~Structure();
 
-	virtual bool trace(Ray& ray, HitInfo& hit) = 0;
+	virtual bool closest_hit(Ray& ray, HitInfo& hit) const = 0;
+	virtual bool any_hit(Ray& ray, HitInfo& hit) const = 0;
 };
 
