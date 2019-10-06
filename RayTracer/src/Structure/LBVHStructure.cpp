@@ -14,34 +14,30 @@ LBVHStructure::~LBVHStructure()
 void LBVHStructure::init(const std::vector<const Geometry*>& _geometry, const std::vector<const Plane*>& _planes)
 {
 	primitives.clear();
-	objects.clear();
+	//objects.clear();
 	planes.clear();
 	
-	for (auto& object : _geometry) {
-		objects.push_back(object);
-	}
-
 	for (auto& plane : _planes) {
 		planes.push_back(plane);
 	}
 
-	std::cout << "" << objects.size() << " loaded\n";
+	//std::cout << "" << objects.size() << " loaded\n";
 	AABB scene_bbox = AABB();
-	for (auto o : objects) {
-		scene_bbox = AABB(o->get_bbox(), scene_bbox);
+	for (auto o : _geometry) {
+		scene_bbox.add_bbox(o->get_bbox());
 	}
 
 	std::cout << "Collecting primitives\n";
 	// Collect all the primitives in the objects
-	for (unsigned int i = 0; i < objects.size(); i++) {
-		const Geometry& object = *objects[i];
-		const unsigned int object_size = object.num_primitives();
+	for (unsigned int i = 0; i < _geometry.size(); i++) {
+		const Geometry* object = _geometry[i];
+		const unsigned int object_size = object->num_primitives();
 
 		for (unsigned int j = 0; j < object_size; j++) {
 			Primitive p = {};
-			p.Object = i;
+			p.Object = object;
 			p.index = j;
-			Vec3f center = object.get_bbox(j).center();
+			Vec3f center = object->get_bbox(j).center();
 			center -= scene_bbox.p_min;
 			center /= scene_bbox.p_max - scene_bbox.p_min;
 			p.code = MortonCode3(center);
@@ -87,7 +83,7 @@ bool LBVHStructure::closest_hit_recurse(Ray& ray, HitInfo& hit, Node& node, cons
 	if (node.bbox.intersect(ray)) {
 		if (node.type == NodeType::Leaf) {
 			const Primitive p = primitives[node.primitive];
-			if (objects[p.Object]->intersect(ray, hit, p.index)) {
+			if (p.Object->intersect(ray, hit, p.index)) {
 				hashit = true;
 				ray.t_max = hit.t;
 			}
@@ -122,7 +118,7 @@ bool LBVHStructure::any_hit_recurse(Ray&ray, HitInfo& hit, Node& node, const Vec
 	if (node.bbox.intersect(ray)) {
 		if (node.type == NodeType::Leaf) {
 			const Primitive& p = primitives[node.primitive];
-			if (objects[p.Object]->intersect(ray, hit, p.index)) {
+			if (p.Object->intersect(ray, hit, p.index)) {
 				return true;
 			}
 		}
@@ -231,7 +227,7 @@ void LBVHStructure::calculateBBox(Node* node)
 	//std::cout << "Nodetype: " << node->type << "\n";
 	if (node->type == NodeType::Leaf) {
 		Primitive& p = primitives[node->primitive];
-		node->bbox = objects[p.Object]->get_bbox(p.index);
+		node->bbox = p.Object->get_bbox(p.index);
 		node->center = node->bbox.center();
 		return;
 	}

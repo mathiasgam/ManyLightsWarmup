@@ -5,6 +5,8 @@
 #include "Geometry/Geometry.h"
 #include "Geometry/Plane.h"
 
+#include "Geometry/TriMesh.h"
+
 #include <vector>
 
 class LBVHStructure :
@@ -27,7 +29,7 @@ private:
 	};
 
 	struct Primitive {
-		unsigned int Object;
+		const Geometry* Object;
 		unsigned int index;
 		MortonCode3 code;
 
@@ -37,7 +39,7 @@ private:
 		}
 	};
 
-	std::vector<const Geometry*> objects;
+	//std::vector<const Geometry*> objects;
 	std::vector<const Plane*> planes;
 
 	std::vector<Primitive> primitives;
@@ -46,7 +48,7 @@ private:
 
 public:
 
-	LBVHStructure() : objects(0), planes(0), primitives(0) {}
+	LBVHStructure() : planes(0), primitives(0) {}
 	~LBVHStructure();
 	virtual void init(const std::vector<const Geometry*>& geometry, const std::vector<const Plane*>& planes);
 	virtual bool closest_hit(Ray& ray, HitInfo& hit) const;

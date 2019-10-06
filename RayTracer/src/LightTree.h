@@ -34,7 +34,7 @@ public:
 	}
 
 	void build(std::vector<PointLight> lights);
-	std::vector<PointLight> cut(Vec3f sample_position, Vec3f sample_normal, float threshold);
+	std::vector<PointLight> cut(Vec3f sample_position, Vec3f sample_normal, float threshold) const;
 
 private:
 	static LightNode* ClusterLightNodes(LightNode* left, LightNode* right);

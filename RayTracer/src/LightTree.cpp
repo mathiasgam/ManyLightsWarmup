@@ -41,7 +41,7 @@ void LightTree::build(std::vector<PointLight> lights)
 
 }
 
-std::vector<PointLight> LightTree::cut(Vec3f sample_position, Vec3f sample_normal, float threshold)
+std::vector<PointLight> LightTree::cut(Vec3f sample_position, Vec3f sample_normal, float threshold) const
 {
 	return m_lights;
 }
