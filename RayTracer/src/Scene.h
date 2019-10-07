@@ -11,7 +11,9 @@
 #include "Structure/Structure.h"
 #include "Structure/LBVHStructure.h"
 
-#include "LightTree.h"
+#include "LightStructure/LightStructure.h"
+#include "LightStructure/LightArray.h"
+#include "LightStructure/LightTree.h"
 
 class Scene
 {
@@ -20,7 +22,7 @@ private:
 	std::vector<const Geometry*> meshes;
 	std::vector<const Plane*> planes;
 
-	std::vector<PointLight> lights;
+	std::vector<PointLight*> lights;
 
 	LBVHStructure BVHMesh;
 	LightTree BVHLights;
@@ -38,6 +40,6 @@ public:
 	bool closest_hit(Ray& ray, HitInfo& hit) const { return BVHMesh.closest_hit(ray, hit); }
 	bool any_hit(Ray& ray, HitInfo& hit) const { return BVHMesh.any_hit(ray, hit); }
 
-	std::vector<PointLight> GetLights(Vec3f position, Vec3f normal, float threshold) const { return BVHLights.cut(position, normal, threshold); }
+	std::vector<PointLight*> GetLights(Vec3f position, Vec3f normal, float threshold) const { return BVHLights.GetLights(position, normal, threshold); }
 };
 

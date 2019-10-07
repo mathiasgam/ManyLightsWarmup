@@ -4,9 +4,11 @@
 
 Scene::~Scene()
 {
-	for (OBJModel* model : models) {
+	for (OBJModel* model : models)
 		delete model;
-	}
+
+	for (PointLight* light : lights)
+		delete light;
 }
 
 void Scene::AddMesh(const char* filename, Vec3f transform)
@@ -25,13 +27,14 @@ void Scene::AddPlane(const Vec3f position, const Vec3f normal)
 
 void Scene::AddLight(const Vec3f position, const Vec3f color)
 {
-	lights.emplace_back(position, color);
+	PointLight* light = new PointLight(position, color);
+	lights.push_back(light);
 }
 
 void Scene::prepare()
 {
 	BVHMesh.init(meshes, planes);
-	BVHLights.build(lights);
+	BVHLights.init(lights);
 }
 
 

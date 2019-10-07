@@ -30,7 +30,6 @@
 #include <atomic>
 #include <future>
 
-#include "LightTree.h"
 #include "MortonCode.h"
 
 #include "ImageTile.h"
@@ -42,8 +41,8 @@ float random(float min, float max) {
 }
 
 int main() {
-	// set the seed for the standard random function
-	srand(std::clock());
+	// set the seed for the standard random function with constant value for comparable results across runs
+	srand(42);
 
 	// scene added as pointer, for easier access over multiple threads
 	Scene* scene = new Scene();
@@ -53,19 +52,17 @@ int main() {
 	scene->AddMesh("../models/bunny.obj", Vec3f(1.0f, 0.5f, 1.0f));
 	scene->AddPlane(Vec3f(0, 0, 0), Vec3f(0, 1, 0));
 
+	//scene->AddLight(Vec3f(20, 2, 2), Vec3f(0, 0, 50));
+
 	const Vec3f light_color = Vec3f(255, 241, 224) / 255;
-	std::vector<PointLight> lights = std::vector<PointLight>();
-	{
-		const float intensity = 70;
-		const int num = 1;
-		for (int i = 0; i < num; i++) {
-			for (int j = 0; j < num; j++) {
-				Vec3f position = Vec3f((float)i - ((float)num / 2.0f), 10, (float)j - ((float)num / 2.0f));
-				Vec3f light = Vec3f(intensity / (num * num)) * light_color;
-				//lights.emplace_back(position, light);
-				scene->AddLight(position, light);
-			}
-		}
+
+	const int N = 100;
+	const float intensity = 15.0f;
+
+	// insert N random lights in the scene
+	for (int i = 0; i < N; i++) {
+		Vec3f pos = Vec3f(random(-5,5), random(2,5), random(-5,5));
+		scene->AddLight(pos, light_color * (intensity / N));
 	}
 
 	// start timing
@@ -129,6 +126,7 @@ int main() {
 
 						Vec3f dir_frag = Vec3f(1.0f / ray.direction[0], 1.0f / ray.direction[1], 1.0f / ray.direction[2]);
 
+						int light_count = 0;
 						if (scene->closest_hit(ray, hit)) {
 							Vec3f normal = hit.normal.normalized();
 							if (dot(normal, ray.direction) > 0)
@@ -136,20 +134,22 @@ int main() {
 
 							Vec3f result = Vec3f(0.0f);
 						
-							for (auto light : scene->GetLights(hit.position, hit.normal, 0.01f)) {
-								Vec3f dir = light.position - hit.position;
+							for (PointLight* light : scene->GetLights(hit.position, hit.normal, 0.05f)) {
+								Vec3f dir = light->position - hit.position;
 								float dist = dir.length();
 								dir = dir.normalized();
+
+								light_count++;
 
 								Ray shadow = Ray(hit.position, dir, epsilon, dist - epsilon);
 								HitInfo shadow_info = HitInfo();
 								if (!scene->any_hit(shadow, shadow_info)) {
-									result += (light.color / (dist * dist)) * fmaxf(dot(normal, dir), 0.0f);
+									result += (light->color / (dist * dist)) * fmaxf(dot(normal, dir), 0.0f);
 								}
 							}
 
 							// Add ambient light
-							result += light_color * 0.4f;
+							result += light_color * 0.2f;
 
 							result = min(result, Vec3f(1.0f));
 							img.setPixel(j, i, result);
@@ -159,7 +159,7 @@ int main() {
 						}
 
 						float f = 1.0f - (1.0f / (hit.trace_depth * 0.01f + 1.0f));
-						img_depth.setPixel(j, i, Vec3f(1.0f - f));
+						img_depth.setPixel(j, i, ((float)light_count) / N);
 					}
 				}));
 
