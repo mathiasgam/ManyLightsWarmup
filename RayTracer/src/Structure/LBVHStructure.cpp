@@ -66,12 +66,12 @@ bool LBVHStructure::closest_hit(Ray& ray, HitInfo& hit) const
 	return hashit;
 }
 
-bool LBVHStructure::any_hit(Ray& ray, HitInfo& hit) const
+bool LBVHStructure::any_hit(Ray& ray) const
 {
 	Vec3f dirfrac = Vec3f(1.0f / ray.direction[0], 1.0f / ray.direction[1], 1.0f / ray.direction[2]);
-	if (any_plane(ray, hit, dirfrac))
+	if (any_plane(ray, dirfrac))
 		return true;
-	return any_hit_recurse(ray, hit, *root, dirfrac);
+	return any_hit_recurse(ray, *root, dirfrac);
 }
 
 bool LBVHStructure::closest_hit_recurse(Ray& ray, HitInfo& hit, Node& node, const Vec3f& dirfrac) const
@@ -85,6 +85,7 @@ bool LBVHStructure::closest_hit_recurse(Ray& ray, HitInfo& hit, Node& node, cons
 			const Primitive p = primitives[node.primitive];
 			if (p.Object->intersect(ray, hit, p.index)) {
 				hashit = true;
+				hit.color = p.Object->color;
 				ray.t_max = hit.t;
 			}
 		}
@@ -112,20 +113,19 @@ bool LBVHStructure::closest_hit_recurse(Ray& ray, HitInfo& hit, Node& node, cons
 	return hashit;
 }
 
-bool LBVHStructure::any_hit_recurse(Ray&ray, HitInfo& hit, Node& node, const Vec3f& dirfrac) const
+bool LBVHStructure::any_hit_recurse(Ray&ray, Node& node, const Vec3f& dirfrac) const
 {
-	hit.trace_depth++;
 	if (node.bbox.intersect(ray)) {
 		if (node.type == NodeType::Leaf) {
 			const Primitive& p = primitives[node.primitive];
-			if (p.Object->intersect(ray, hit, p.index)) {
+			if (p.Object->intersect(ray, p.index)) {
 				return true;
 			}
 		}
 		else {
-			if (any_hit_recurse(ray, hit, *node.ChildA, dirfrac))
+			if (any_hit_recurse(ray, *node.ChildA, dirfrac))
 				return true;
-			if (any_hit_recurse(ray, hit, *node.ChildB, dirfrac))
+			if (any_hit_recurse(ray, *node.ChildB, dirfrac))
 				return true;
 		}
 	}
@@ -138,16 +138,17 @@ bool LBVHStructure::closest_plane(Ray& ray, HitInfo& hit, Vec3f& dirfrac) const
 	for (int i = 0; i < planes.size(); i++) {
 		if (planes[i]->intersect(ray, hit, dirfrac)) {
 			hashit = true;
+			hit.color = planes[i]->color;
 			ray.t_max = hit.t;
 		}
 	}
 	return hashit;
 }
 
-bool LBVHStructure::any_plane(Ray&ray, HitInfo& hit, Vec3f& dirfrac) const
+bool LBVHStructure::any_plane(Ray&ray, Vec3f& dirfrac) const
 {
 	for (auto& plane : planes) {
-		if (plane->intersect(ray, hit, dirfrac)) {
+		if (plane->intersect(ray, dirfrac)) {
 			return true;
 		}
 	}

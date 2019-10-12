@@ -5,8 +5,7 @@
 #include <vector>
 #include <string>
 
-class BVHSphereStructure:
-	public Structure
+class BVHSphereStructure
 {
 public:
 	BVHSphereStructure(std::vector<Sphere>);

@@ -7,8 +7,7 @@
 #include <vector>
 
 
-class ArraySphereStructure :
-	public Structure
+class ArraySphereStructure
 {
 public:
 	ArraySphereStructure(std::vector<Sphere>);

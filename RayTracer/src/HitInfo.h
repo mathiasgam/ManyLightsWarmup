@@ -13,6 +13,7 @@ public:
 	float t;
 	Vec3f position;
 	Vec3f normal;
+	Vec3f color;
 	int trace_depth;
 	
 	HitInfo();

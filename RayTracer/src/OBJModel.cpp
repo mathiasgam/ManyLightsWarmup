@@ -8,7 +8,7 @@
 #include <string>
 
 
-OBJModel::OBJModel(const char * filename)
+OBJModel::OBJModel(const char * filename, const Vec3f _color)
 {
 	std::ifstream file(filename);
 	if (!file) {
@@ -46,18 +46,9 @@ OBJModel::OBJModel(const char * filename)
 			break;
 		}
 	}
-	std::cout << "vertices: " << mesh.geometry.num_vertices()<< "\n";
-	std::cout << "faces: " << mesh.geometry.num_faces() << "\n";
-
-	/*
-	for (auto& v : mesh.geometry.vertices) {
-		std::cout << "v: " << v << "\n";
-	}
-	for (auto& f : mesh.geometry.faces) {
-		std::cout << "f: " << f << "\n";
-	}
-	*/
-	
+	mesh.color = _color;
+	color = _color;
+	std::cout << "Loaded file: " << filename << std::endl;	
 }
 
 OBJModel::~OBJModel()

@@ -13,7 +13,7 @@ public:
 
 	virtual void init(const std::vector<const Geometry*>& geometry, const std::vector<const Plane*>& planes);
 	virtual bool closest_hit(Ray& ray, HitInfo& hit) const;
-	virtual bool any_hit(Ray& ray, HitInfo& hit) const;
+	virtual bool any_hit(Ray& ray) const;
 
 	virtual bool trace(Ray& ray, HitInfo& hit) { return closest_hit(ray, hit); }
 
@@ -61,10 +61,10 @@ private:
 	std::vector<Primitive> primitives;
 
 	bool closest_hit_recurse(Ray&, HitInfo&, unsigned int i, const Vec3f& dirfrac) const;
-	bool any_hit_recurse(Ray&, HitInfo&, unsigned int i, const Vec3f& dirfrac) const;
+	bool any_hit_recurse(Ray&, unsigned int i, const Vec3f& dirfrac) const;
 
 	bool closest_plane(Ray&, HitInfo&, Vec3f& dirfrac) const;
-	bool any_plane(Ray&, HitInfo&, Vec3f& dirfrac) const;
+	bool any_plane(Ray&, Vec3f& dirfrac) const;
 
 	AABB recalculate_bboxes(unsigned int index);
 

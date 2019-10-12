@@ -10,6 +10,6 @@ public:
 	virtual ~Structure();
 
 	virtual bool closest_hit(Ray& ray, HitInfo& hit) const = 0;
-	virtual bool any_hit(Ray& ray, HitInfo& hit) const = 0;
+	virtual bool any_hit(Ray& ray) const = 0;
 };
 

@@ -52,15 +52,15 @@ public:
 	~LBVHStructure();
 	virtual void init(const std::vector<const Geometry*>& geometry, const std::vector<const Plane*>& planes);
 	virtual bool closest_hit(Ray& ray, HitInfo& hit) const;
-	virtual bool any_hit(Ray& ray, HitInfo& hit) const;
+	virtual bool any_hit(Ray& ray) const;
 
 private:
 
 	bool closest_hit_recurse(Ray&, HitInfo&, Node& node, const Vec3f& dirfrac) const;
-	bool any_hit_recurse(Ray&, HitInfo&, Node& node, const Vec3f& dirfrac) const;
+	bool any_hit_recurse(Ray&, Node& node, const Vec3f& dirfrac) const;
 
 	bool closest_plane(Ray&, HitInfo&, Vec3f& dirfrac) const;
-	bool any_plane(Ray&, HitInfo&, Vec3f& dirfrac) const;
+	bool any_plane(Ray&, Vec3f& dirfrac) const;
 
 	Node* generateHierarchy(std::vector<Primitive>& sortedPrimitives, int first, int last);
 	int findSplit(std::vector<Primitive>& sortedPrimitives, int first, int last);

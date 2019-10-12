@@ -78,12 +78,12 @@ bool SAHBVHStructure::closest_hit(Ray& ray, HitInfo& hit) const
 	return hashit;
 }
 
-bool SAHBVHStructure::any_hit(Ray& ray, HitInfo& hit) const
+bool SAHBVHStructure::any_hit(Ray& ray) const
 {
 	Vec3f dirfrac = Vec3f(1.0f / ray.direction[0], 1.0f / ray.direction[1], 1.0f / ray.direction[2]);
-	if (any_plane(ray, hit, dirfrac))
+	if (any_plane(ray, dirfrac))
 		return true;
-	return any_hit_recurse(ray, hit, root_index, dirfrac);
+	return any_hit_recurse(ray, root_index, dirfrac);
 }
 
 void SAHBVHStructure::print()
@@ -144,23 +144,22 @@ bool SAHBVHStructure::closest_hit_recurse(Ray &ray, HitInfo &hit, unsigned int i
 	return hashit;
 }
 
-bool SAHBVHStructure::any_hit_recurse(Ray &ray, HitInfo &hit, unsigned int i, const Vec3f& dirfrac) const
+bool SAHBVHStructure::any_hit_recurse(Ray &ray, unsigned int i, const Vec3f& dirfrac) const
 {
-	hit.trace_depth++;
 	const BVHNode& node = nodes[i];
 	if (node.bbox.intersect(ray)) {
 		if (node.type == leaf) {
 			for (int j = node.leftChild; j < node.rightChild; j++) {
 				const Primitive& p = primitives[j];
-				if (objects[p.object]->intersect(ray, hit, p.index)) {
+				if (objects[p.object]->intersect(ray, p.index)) {
 					return true;
 				}
 			}
 		}
 		else {
-			if (any_hit_recurse(ray, hit, node.leftChild, dirfrac))
+			if (any_hit_recurse(ray, node.leftChild, dirfrac))
 				return true;
-			if (any_hit_recurse(ray, hit, node.rightChild, dirfrac))
+			if (any_hit_recurse(ray, node.rightChild, dirfrac))
 				return true;
 		}
 	}
@@ -179,10 +178,10 @@ bool SAHBVHStructure::closest_plane(Ray &ray, HitInfo &hit, Vec3f& dirfrac) cons
 	return hashit;
 }
 
-bool SAHBVHStructure::any_plane(Ray &ray, HitInfo &hit, Vec3f& dirfrac) const
+bool SAHBVHStructure::any_plane(Ray &ray, Vec3f& dirfrac) const
 {
 	for (auto& plane : planes) {
-		if (plane->intersect(ray, hit, dirfrac)) {
+		if (plane->intersect(ray, dirfrac)) {
 			return true;
 		}
 	}

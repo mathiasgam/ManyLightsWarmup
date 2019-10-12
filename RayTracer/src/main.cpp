@@ -35,41 +35,76 @@
 #include "ImageTile.h"
 
 #include "Scene.h"
+#include "RayTracer.h"
 
 float random(float min, float max) {
 	return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (max - min)));
+}
+
+Vec3f random(Vec3f min, Vec3f max) {
+	float x = random(min[0], max[0]);
+	float y = random(min[1], max[1]);
+	float z = random(min[2], max[2]);
+	return Vec3f(x, y, z);
+}
+
+void addLightCluster(Scene* scene, Vec3f center, Vec3f dim, Vec3f color, unsigned int N) {
+	for (int i = 0; i < N; i++) {
+		Vec3f pos = random(center - dim, center + dim);
+		scene->AddLight(pos, color / N);
+	}
+}
+
+Vec3f color(unsigned int r, unsigned int g, unsigned int b) {
+	return Vec3f(static_cast<float>(r) / 255.0f, static_cast<float>(g) / 255.0f, static_cast<float>(b) / 255.0f);
+}
+
+void prepareScene(Scene* scene) {
+
+	// add some models to the scene
+	scene->AddMesh("../models/sponza.obj", color(196, 160, 106), Vec3f(0, 0, 0));
+	scene->AddMesh("../models/dragon.obj", color(222, 10, 2), Vec3f(0.0f, 0.3f, 0.0f));
+	scene->AddMesh("../models/bunny.obj", color(122, 75, 39), Vec3f(1.0f, -0.3f, 1.0f));
+	scene->AddPlane(Vec3f(0, 0, 0), color(92, 85, 74), Vec3f(0, 1, 0));
+
+	//scene->AddLight(Vec3f(20, 2, 2), Vec3f(0, 0, 50));
+	const Vec3f light_color = color(255, 241, 224);
+
+	scene->SetAmbient(light_color * 0.2f);
+
+	const float intensity = 15.0f;
+	scene->AddLight(Vec3f(0, 10, 0), light_color * 100);
+	scene->AddLight(Vec3f(15, 10, 0), light_color * 100);
+	scene->AddLight(Vec3f(-15, 10, 0), light_color * 100);
+
+	//addLightCluster(scene, Vec3f(0.0f, 10.0f, 0.0f), Vec3f(0.2f), light_color * intensity * 10, 2);
+	//addLightCluster(scene, Vec3f(5, 6, 5), Vec3f(0.2f), light_color * intensity, 2);
+	//addLightCluster(scene, Vec3f(5, 6, -5), Vec3f(0.2f), light_color * intensity, 6);
 }
 
 int main() {
 	// set the seed for the standard random function with constant value for comparable results across runs
 	srand(42);
 
+	int width = 720;
+	int height = 480;
+	float aspect = (float)width / (float)height;
+	Vec2f pixel_dim = Vec2f(1.0f / width, 1.0f / height);
+	std::cout << "Width: " << width << ", Height: " << height << ", Aspect: " << aspect << std::endl;
+
+
+	// create the camera
+	PinHoleCamera cam = PinHoleCamera();
+	cam.SetPosition(Vec3f(8.0f, 1.0f, 0.0f));
+	cam.LookAt(Vec3f(0.0f, 0.5f, 0.0f));
+
 	// scene added as pointer, for easier access over multiple threads
 	Scene* scene = new Scene();
-
-	scene->AddMesh("../models/buddha.obj", Vec3f(1, 0.5, -0.5));
-	scene->AddMesh("../models/dragon.obj", Vec3f(0.0f, 0.4f, 0.0f));
-	scene->AddMesh("../models/bunny.obj", Vec3f(1.0f, 0.5f, 1.0f));
-	scene->AddPlane(Vec3f(0, 0, 0), Vec3f(0, 1, 0));
-
-	//scene->AddLight(Vec3f(20, 2, 2), Vec3f(0, 0, 50));
-
-	const Vec3f light_color = Vec3f(255, 241, 224) / 255;
-
-	const int N = 100;
-	const float intensity = 15.0f;
-
-	// insert N random lights in the scene
-	for (int i = 0; i < N; i++) {
-		Vec3f pos = Vec3f(random(-5,5), random(2,5), random(-5,5));
-		scene->AddLight(pos, light_color * (intensity / N));
-	}
+	prepareScene(scene);
 
 	// start timing
 	std::clock_t start;
 	start = std::clock();
-
-	std::cout << "creating structure\n";
 
 	// build tracing structures. if additional objects is added or moved around, the scene need to be prepared again
 	scene->prepare();
@@ -77,17 +112,9 @@ int main() {
 	std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC) << " s" << std::endl;
 
 
-	// create the camera
-	PinHoleCamera cam = PinHoleCamera();
-	cam.SetPosition(Vec3f(-2.0f, 1.0f, -0.5f));
-	cam.LookAt(Vec3f(0.0f, 0.5f, 0.0f));
-
-
 	// define images to render to
-	int width = 512;
-	int height = 512;
-
 	Image img(width, height);
+	Image img_lights(width, height);
 	Image img_depth(width, height);
 
 
@@ -96,6 +123,9 @@ int main() {
 	start = std::clock();
 
 	float epsilon = 0.001f;
+
+	RayTracer* tracer = new RayTracer(scene);
+	tracer->SetLightThreshold(0.05f);
 
 	std::size_t max = static_cast<size_t>(width * height);
 
@@ -107,7 +137,7 @@ int main() {
 	// add Async processies until all cores have one
 	while (cores--)
 		future_vector.emplace_back(
-			std::async([=, &cam, &count, &img, &img_depth]()
+			std::async([=, &cam, &count, &img, &img_depth, &img_lights]()
 				{
 					while (true)
 					{
@@ -115,51 +145,33 @@ int main() {
 						std::size_t index = count++;
 						if (index >= max)
 							break;
+
+						if ((index + 1) % (max / 10) == 0)
+							std::cout << ".";
+
 						std::size_t i = index % width;
 						std::size_t j = index / width;
-						float x = (float)j / width;
-						float y = (float)i / height;
-						float aspect = x / y;
 
-						Ray ray = cam.sample(Vec2f((x - 0.5f) * 2.0f, (y - 0.5f) * 2.0f));
-						HitInfo hit = HitInfo();
+						Vec3f color = Vec3f(0.0f);
+						float f = 0.0f;
+						float fd = 0.0f;
 
-						Vec3f dir_frag = Vec3f(1.0f / ray.direction[0], 1.0f / ray.direction[1], 1.0f / ray.direction[2]);
+						float x = ((float)i / width);
+						float y = ((float)j / height);
 
-						int light_count = 0;
-						if (scene->closest_hit(ray, hit)) {
-							Vec3f normal = hit.normal.normalized();
-							if (dot(normal, ray.direction) > 0)
-								normal = -normal;
+						Ray ray = cam.sample(Vec2f((x - 0.5f) * 2.0f * aspect, (y - 0.5f) * 2.0f));
 
-							Vec3f result = Vec3f(0.0f);
-						
-							for (PointLight* light : scene->GetLights(hit.position, hit.normal, 0.05f)) {
-								Vec3f dir = light->position - hit.position;
-								float dist = dir.length();
-								dir = dir.normalized();
+						TraceResult res = tracer->trace(ray);
 
-								light_count++;
 
-								Ray shadow = Ray(hit.position, dir, epsilon, dist - epsilon);
-								HitInfo shadow_info = HitInfo();
-								if (!scene->any_hit(shadow, shadow_info)) {
-									result += (light->color / (dist * dist)) * fmaxf(dot(normal, dir), 0.0f);
-								}
-							}
+						color += res.color;
+						//color = (res.hit.normal + 1.0f) / 2.0f;
+						fd += 1.0f - (1.0f / (res.hit.trace_depth * 0.01f + 1.0f));
+						f += static_cast<float>(res.num_lights) / scene->GetNumLights();
 
-							// Add ambient light
-							result += light_color * 0.2f;
-
-							result = min(result, Vec3f(1.0f));
-							img.setPixel(j, i, result);
-						}
-						else {
-							img.setPixel(j, i, Vec3f(0.0f));
-						}
-
-						float f = 1.0f - (1.0f / (hit.trace_depth * 0.01f + 1.0f));
-						img_depth.setPixel(j, i, ((float)light_count) / N);
+						img.setPixel(i, j, color);
+						img_lights.setPixel(i, j, f);
+						img_depth.setPixel(i, j, fd);
 					}
 				}));
 
@@ -167,12 +179,15 @@ int main() {
 	for (auto& future : future_vector) {
 		future.wait();
 	}
+	std::cout << std::endl;
 
 	std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC) << " s" << std::endl;
 
 	img.save_as("Test.png");
 	img_depth.save_as("Trace_depth.png");
+	img_lights.save_as("Trace_lights.png");
 
 	// cleanup memory
+	delete tracer;
 	delete scene;
 }

@@ -2,10 +2,14 @@
 #include "lodepng.h"
 
 #include <vector>
+#include <cassert>
 
 
 void Image::setPixel(const unsigned int x, const unsigned int y, Vec3f color)
 {
+	//std::cout << "x: " << x << ", y: " << y << ", res: " << res << std::endl;
+	assert(x >= 0 && x < res[0]);
+	assert(y >= 0 && y < res[1]);
 	const unsigned int index = y * res[0] * 4 + x * 4;
 	for (unsigned int i = 0; i < 3; i++) {
 		data[index + i] = (unsigned char)(color[i] * 255);
@@ -15,6 +19,8 @@ void Image::setPixel(const unsigned int x, const unsigned int y, Vec3f color)
 
 void Image::setPixel(const unsigned int x, const unsigned int y, Vec4f color)
 {
+	assert(x > res[0]);
+	assert(y > res[1]);
 	const unsigned int index = y * res[0] * 4 + x * 4;
 	for (unsigned int i = 0; i < 4; i++) {
 		data[index + i] = (unsigned char)(color[i] * 255);
