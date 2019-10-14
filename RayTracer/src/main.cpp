@@ -37,16 +37,7 @@
 #include "Scene.h"
 #include "RayTracer.h"
 
-float random(float min, float max) {
-	return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (max - min)));
-}
-
-Vec3f random(Vec3f min, Vec3f max) {
-	float x = random(min[0], max[0]);
-	float y = random(min[1], max[1]);
-	float z = random(min[2], max[2]);
-	return Vec3f(x, y, z);
-}
+#include "Sampling.h"
 
 void addLightCluster(Scene* scene, Vec3f center, Vec3f dim, Vec3f color, unsigned int N) {
 	for (int i = 0; i < N; i++) {
@@ -62,7 +53,7 @@ Vec3f color(unsigned int r, unsigned int g, unsigned int b) {
 void prepareScene(Scene* scene) {
 
 	// add some models to the scene
-	scene->AddMesh("../models/sponza.obj", color(196, 160, 106), Vec3f(0, 0, 0));
+	//scene->AddMesh("../models/san-miguel_tri.obj", color(196, 160, 106), Vec3f(0, 0, 0));
 	scene->AddMesh("../models/dragon.obj", color(222, 10, 2), Vec3f(0.0f, 0.3f, 0.0f));
 	scene->AddMesh("../models/bunny.obj", color(122, 75, 39), Vec3f(1.0f, -0.3f, 1.0f));
 	scene->AddPlane(Vec3f(0, 0, 0), color(92, 85, 74), Vec3f(0, 1, 0));
@@ -72,14 +63,16 @@ void prepareScene(Scene* scene) {
 
 	scene->SetAmbient(light_color * 0.2f);
 
-	const float intensity = 15.0f;
-	scene->AddLight(Vec3f(0, 10, 0), light_color * 100);
-	scene->AddLight(Vec3f(15, 10, 0), light_color * 100);
-	scene->AddLight(Vec3f(-15, 10, 0), light_color * 100);
+	const float intensity = 50.0f;
+	//scene->AddLight(Vec3f(16.0f, 5.0f, 6.0f), light_color * 100);
+	//scene->AddLight(Vec3f(15, 10, 0), light_color * 100);
+	//scene->AddLight(Vec3f(24, 10, 0), light_color * 100);
 
-	//addLightCluster(scene, Vec3f(0.0f, 10.0f, 0.0f), Vec3f(0.2f), light_color * intensity * 10, 2);
-	//addLightCluster(scene, Vec3f(5, 6, 5), Vec3f(0.2f), light_color * intensity, 2);
-	//addLightCluster(scene, Vec3f(5, 6, -5), Vec3f(0.2f), light_color * intensity, 6);
+	const int num_lights = 1000;
+
+	addLightCluster(scene, Vec3f(0.0f, 10.0f, 0.0f), Vec3f(2.0f), light_color * intensity, num_lights * 0.2);
+	addLightCluster(scene, Vec3f(10, 10, 0), Vec3f(2.0f), light_color * intensity, num_lights * 0.2);
+	addLightCluster(scene, Vec3f(-10, 10, -3), Vec3f(2.0f), light_color * intensity, num_lights * 0.6);
 }
 
 int main() {
@@ -92,15 +85,17 @@ int main() {
 	Vec2f pixel_dim = Vec2f(1.0f / width, 1.0f / height);
 	std::cout << "Width: " << width << ", Height: " << height << ", Aspect: " << aspect << std::endl;
 
-
 	// create the camera
 	PinHoleCamera cam = PinHoleCamera();
-	cam.SetPosition(Vec3f(8.0f, 1.0f, 0.0f));
+	cam.SetPosition(Vec3f(-2.5f, 1.0f, 0.0f));
 	cam.LookAt(Vec3f(0.0f, 0.5f, 0.0f));
 
 	// scene added as pointer, for easier access over multiple threads
 	Scene* scene = new Scene();
 	prepareScene(scene);
+
+	RayTracer* tracer = new RayTracer(scene);
+	tracer->SetLightThreshold(0.01f);
 
 	// start timing
 	std::clock_t start;
@@ -123,9 +118,6 @@ int main() {
 	start = std::clock();
 
 	float epsilon = 0.001f;
-
-	RayTracer* tracer = new RayTracer(scene);
-	tracer->SetLightThreshold(0.05f);
 
 	std::size_t max = static_cast<size_t>(width * height);
 

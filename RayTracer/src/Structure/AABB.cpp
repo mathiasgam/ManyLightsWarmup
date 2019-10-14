@@ -97,6 +97,11 @@ AABB::AABB(Vec3f min, Vec3f max):
 {
 }
 
+AABB::AABB(Vec3f p): 
+	p_min(p), p_max(p)
+{
+}
+
 AABB::AABB(AABB a, AABB b)
 {
 	for (int i = 0; i < 3; i++) {

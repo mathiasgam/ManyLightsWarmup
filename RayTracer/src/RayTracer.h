@@ -28,5 +28,9 @@ public:
 	/// Determines if there's a clear line of sight between point A and point B
 	bool Occluded(Ray& ray) const;
 	//RayTracer(std::shared_ptr<Structure> search_structure):search_structure(search_structure){}
+
+private:
+	Vec3f sample(Ray ray, int bounces) const;
+	Vec3f SampleLights(const Vec3f& pos, const Vec3f normal, const Vec3f& material, int& numLights) const;
 };
 

@@ -14,6 +14,7 @@
 #include "LightStructure/LightStructure.h"
 #include "LightStructure/LightArray.h"
 #include "LightStructure/LightTree.h"
+#include "LightStructure/BULightTree.h"
 
 class Scene
 {
@@ -25,7 +26,7 @@ private:
 	std::vector<PointLight*> lights;
 
 	LBVHStructure BVHMesh;
-	LightArray BVHLights;
+	BULightTree BVHLights;
 
 	Vec3f ambient = Vec3f(0.1f, 0.1f, 0.1f);
 

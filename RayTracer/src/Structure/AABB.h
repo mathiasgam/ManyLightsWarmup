@@ -26,6 +26,7 @@ public:
 	AABB(const AABB& bbox) { p_min = bbox.p_min; p_max = bbox.p_max; }
 	AABB(std::vector<AABB> const&);
 	AABB(Vec3f min, Vec3f max);
+	AABB(Vec3f p);
 	AABB(AABB, AABB);
 	~AABB();
 

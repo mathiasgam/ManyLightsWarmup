@@ -1,0 +1,24 @@
+
+tree: "TestTree100"
+- lights: 100
+- threshold: 0.01
+- build: 5.7s
+- rendering: 34.5s
+
+array: "TestArray100"
+- lights: 100
+- threshold: 0.01
+- build: 5.7s
+- render: 41.7
+
+tree: "TestTree50"
+- lights: 50
+- threshold: 0.01
+- build: 5.7s
+- rendering: 18.8s
+
+array: "TestArray50"
+- lights: 50
+- threshold: 0.01
+- build: 5.7s
+- render: 20.5s
