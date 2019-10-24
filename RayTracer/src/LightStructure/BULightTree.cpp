@@ -122,11 +122,19 @@ void BULightTree::SearchLights(std::vector<PointLight*>& out, LightNode* node, V
 		out.push_back(node->reprecentative);
 		return;
 	}
+	
+	// Test if the bounding box is behind the surface.
+	Vec3f t1 = (node->bbox.p_min - pos) / normal;
+	Vec3f t2 = (node->bbox.p_max - pos) / normal;
+	if (max(t1, t2).max_componont() < 0.0f)
+		return;
+	
+
 	float dist = (pos - node->bbox.center()).length();
 	float area = node->bbox.area();
-	float diagoal = (node->bbox.p_max - node->bbox.p_min).length();
+	float intensity = node->reprecentative->color.element_sum();
 	//std::cout << area << std::endl;
-	if (area / (dist * dist) < threshold) {
+	if (intensity / (dist * dist) < threshold) {
 		out.push_back(node->reprecentative);
 	}
 	else {

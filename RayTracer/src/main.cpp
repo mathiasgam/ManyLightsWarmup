@@ -70,9 +70,9 @@ void prepareScene(Scene* scene) {
 
 	const int num_lights = 100;
 
-	addLightCluster(scene, Vec3f(0.0f, 10.0f, 0.0f), Vec3f(2.0f), light_color * intensity, num_lights * 0.2);
-	addLightCluster(scene, Vec3f(10, 10, 0), Vec3f(2.0f), light_color * intensity, num_lights * 0.2);
-	addLightCluster(scene, Vec3f(-10, 10, -3), Vec3f(2.0f), light_color * intensity, num_lights * 0.6);
+	addLightCluster(scene, Vec3f(0.0f, 5.0f, 0.0f), Vec3f(1,1,1), light_color * intensity, num_lights * 0.2);
+	addLightCluster(scene, Vec3f(10, 5, 0), Vec3f(1,1,1), light_color * intensity, num_lights * 0.2);
+	addLightCluster(scene, Vec3f(-10, 5, -3), Vec3f(1,1,1), light_color * intensity, num_lights * 0.6);
 }
 
 int main() {
@@ -88,6 +88,7 @@ int main() {
 	// create the camera
 	PinHoleCamera cam = PinHoleCamera();
 	cam.SetPosition(Vec3f(-2.5f, 1.0f, 0.0f));
+	//cam.SetPosition(Vec3f(-20.0f, 10.0f, 0.0f));
 	cam.LookAt(Vec3f(0.0f, 0.5f, 0.0f));
 
 	// scene added as pointer, for easier access over multiple threads
@@ -154,7 +155,6 @@ int main() {
 						Ray ray = cam.sample(Vec2f((x - 0.5f) * 2.0f * aspect, (y - 0.5f) * 2.0f));
 
 						TraceResult res = tracer->trace(ray);
-
 
 						color += res.color;
 						//color = (res.hit.normal + 1.0f) / 2.0f;

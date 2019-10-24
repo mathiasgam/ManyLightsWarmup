@@ -63,6 +63,7 @@ bool TriMesh::intersect(Ray & ray, HitInfo & hit, unsigned int i) const
 			hit.normal = normal;
 			hit.t = t;
 			hit.position = ray.center + ray.direction * t;
+			hit.color = Vec3f(0.4f, 0.8f, 0.2f);
 			return true;
 		}
 	}

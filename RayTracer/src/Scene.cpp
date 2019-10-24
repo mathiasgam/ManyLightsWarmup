@@ -1,6 +1,7 @@
 #include "Scene.h"
 
 #include "OBJModel.h"
+#include "Geometry/Point.h"
 
 Scene::~Scene()
 {
@@ -18,6 +19,12 @@ void Scene::AddMesh(const char* filename, const Vec3f color, Vec3f transform)
 	//model->meshes[0].normalize();
 	model->meshes[0].translate(transform);
 	meshes.push_back(&model->meshes[0]);
+}
+
+void Scene::AddPoint(const Vec3f position, const float radius)
+{
+	Point* p = new Point(position, radius);
+	meshes.push_back(p);
 }
 
 void Scene::AddPlane(const Vec3f position, const Vec3f color, const Vec3f normal)
@@ -40,8 +47,13 @@ void Scene::prepare()
 	std::cout << "- Planes: " << planes.size() << std::endl;
 	std::cout << "- Lights: " << lights.size() << std::endl;
 
-	BVHMesh.init(meshes, planes);
 	BVHLights.init(lights);
+
+	for (PointLight* light : lights) {
+		AddPoint(light->position, 0.05f);
+	}
+
+	BVHMesh.init(meshes, planes);
 }
 
 void Scene::SetAmbient(const Vec3f& color)

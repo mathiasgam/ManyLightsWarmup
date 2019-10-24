@@ -39,6 +39,7 @@ public: /// Public Functions
 	~Scene();
 
 	void AddMesh(const char* filename, const Vec3f color, Vec3f transform);
+	void AddPoint(const Vec3f position, const float radius);
 	void AddPlane(const Vec3f position, const Vec3f color, const Vec3f normal);
 	void AddLight(const Vec3f position, const Vec3f color);
 
