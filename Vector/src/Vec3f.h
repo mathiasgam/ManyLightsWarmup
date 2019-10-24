@@ -19,11 +19,11 @@ public:
 	//Vec3f operator*(float) const;
 	//Vec3f operator/(float) const;
 
-	Vec3f normalized() const;
-	float length() const;
+	inline Vec3f normalized() const;
+	inline float length() const;
 
-	float min_componont();
-	float max_componont();
+	inline float min_componont();
+	inline float max_componont();
 
 };
 

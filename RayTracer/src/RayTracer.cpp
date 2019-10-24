@@ -1,5 +1,6 @@
 #include "RayTracer.h"
 #include "Sampling.h"
+#include "Vec3f.h"
 
 Vec3f RayTracer::SampleLights(const Vec3f& pos, const Vec3f normal, const Vec3f& material, int& numLights) const {
 	Vec3f res = Vec3f(0.0f);
@@ -12,7 +13,7 @@ Vec3f RayTracer::SampleLights(const Vec3f& pos, const Vec3f normal, const Vec3f&
 
 		Ray shadow = Ray(pos, dir, epsilon, dist - epsilon);
 		if (!Occluded(shadow)) {
-			res += material * (light->color / (dist * dist)) * fmaxf(dot(normal, dir), 0.0f);
+			res += material * (light->color / (dist * dist)) * max(dot(normal, dir), 0.0f);
 		}
 
 		numLights++;

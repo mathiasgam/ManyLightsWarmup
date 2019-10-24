@@ -171,6 +171,8 @@ int main() {
 	for (auto& future : future_vector) {
 		future.wait();
 	}
+
+
 	std::cout << std::endl;
 
 	std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC) << " s" << std::endl;

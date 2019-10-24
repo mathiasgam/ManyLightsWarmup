@@ -14,7 +14,7 @@ public:
 	Vec3f p_min, p_max;
 
 	bool intersect(const Ray&)const;
-	bool intersect(const Ray& ray, Vec3f& dirfrac)const;
+	bool intersect(const Ray& ray, const Vec3f& dirfrac)const;
 	Vec3f center()const;
 	Vec3f size()const;
 	float area()const;

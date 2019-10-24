@@ -12,17 +12,23 @@ Vec3f Vec3f::normalized() const
 
 float Vec3f::length() const
 {
-	return sqrt(data[0]*data[0] + data[1]* data[1] + data[2]*data[2]);
+	return sqrt(data[0] * data[0] + data[1] * data[1] + data[2] * data[2]);;
 }
 
 float Vec3f::min_componont()
 {
-	return fminf(data[0], fminf(data[1],data[2]));
+	float t;
+	t = data[0] < data[1] ? data[0] : data[1];
+	t = t < data[2] ? t : data[2];
+	return t;
 }
 
 float Vec3f::max_componont()
 {
-	return fmaxf(data[0], fmaxf(data[1],data[2]));
+	float t;
+	t = data[0] > data[1] ? data[0] : data[1];
+	t = t > data[2] ? t : data[2];
+	return t;
 }
 
 inline Vec3f cross(const Vec3f & v0, const Vec3f & v1)

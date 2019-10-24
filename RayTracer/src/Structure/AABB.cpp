@@ -9,7 +9,8 @@
 
 bool AABB::intersect(const Ray& ray)const
 {
-	Vec3f dirfrac = Vec3f(1.0f / ray.direction[0], 1.0f / ray.direction[1], 1.0f / ray.direction[2]);
+	//Vec3f dirfrac = Vec3f(1.0f / ray.direction[0], 1.0f / ray.direction[1], 1.0f / ray.direction[2]);
+	Vec3f dirfrac = 1.0f / ray.direction;
 	
 	return intersect(ray, dirfrac);
 }
@@ -20,35 +21,20 @@ void swap(float& a, float& b) {
 	b = tmp;
 }
 
-bool AABB::intersect(const Ray& ray, Vec3f& dirfrac) const
+bool AABB::intersect(const Ray& ray, const Vec3f& dirfrac) const
 {
-	/*float tmin = ray.t_min;
-	float tmax = ray.t_max;
-
-	for (int i = 0; i < 3; ++i) {
-		float t1 = (p_min[i] - ray.center[i])*dirfrac[i];
-		float t2 = (p_max[i] - ray.center[i])*dirfrac[i];
-
-
-		tmin = fmaxf(tmin, fminf(t1, t2)); // use vector min and max
-		tmax = fminf(tmax, fmaxf(t1, t2));
-	}
-
-	return tmax > fmaxf(tmin, 0.0f);
-
-	*/
-
-	
-	float tmin = ray.t_min;
-	float tmax = ray.t_max;
-
 	Vec3f t1 = (p_min - ray.center) * dirfrac;
 	Vec3f t2 = (p_max - ray.center) * dirfrac;
 
-	tmin = min(t1, t2).max_componont(); // use vector min and max
-	tmax = max(t1, t2).min_componont();
+	float tmin = min(t1, t2).max_componont();
+	tmin = max(tmin, ray.t_min);
 
-	return tmax > fmaxf(tmin, 0.0f);
+	float tmax = max(t1, t2).min_componont();
+	tmax = min(tmax, ray.t_max);
+
+	tmin = tmin > 0.0f ? tmin : 0.0f;
+
+	return tmax > tmin;
 	
 }
 
@@ -70,19 +56,14 @@ float AABB::area() const
 
 void AABB::add_point(const Vec3f p)
 {
-	for (int i = 0; i < 3; i++) {
-		p_min[i] = fminf(p_min[i], p[i]);
-		p_max[i] = fmaxf(p_max[i], p[i]);
-	}
-	
+	p_min = min(p_min, p);
+	p_max = max(p_max, p);
 }
 
 void AABB::add_bbox(const AABB& aabb)
 {
-	for (int i = 0; i < 3; i++) {
-		p_min[i] = fminf(p_min[i], aabb.p_min[i]);
-		p_max[i] = fmaxf(p_max[i], aabb.p_max[i]);
-	}
+	p_min = min(p_min, aabb.p_min);
+	p_max = max(p_max, aabb.p_max);
 }
 
 
@@ -120,10 +101,8 @@ AABB::AABB(Vec3f p):
 
 AABB::AABB(AABB a, AABB b)
 {
-	for (int i = 0; i < 3; i++) {
-		p_min[i] = fminf(a.p_min[i], b.p_min[i]);
-		p_max[i] = fmaxf(a.p_max[i], b.p_max[i]);
-	}
+	p_min = min(a.p_min, b.p_min);
+	p_max = max(a.p_max, b.p_max);
 }
 
 

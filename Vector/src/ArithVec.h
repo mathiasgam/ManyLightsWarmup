@@ -246,6 +246,41 @@ public:
 
 }; // end of member functions
 
+template <class T, class V, unsigned int N>
+inline V operator*(const T& c, const ArithVec<T, V, N>& v) {
+	V res;
+	for (int i = 0; i < N; i++) {
+		res[i] = c * v[i];
+	}
+	return res;
+}
+
+template <class T, class V, unsigned int N>
+inline V operator/(const T& c, const ArithVec<T, V, N>& v) {
+	V res;
+	for (int i = 0; i < N; i++) {
+		res[i] = c / v[i];
+	}
+	return res;
+}
+
+template <class T, class V, unsigned int N>
+inline V operator+(const T& c, const ArithVec<T, V, N>& v) {
+	V res;
+	for (int i = 0; i < N; i++) {
+		res[i] = c + v[i];
+	}
+	return res;
+}
+
+template <class T, class V, unsigned int N>
+inline V operator-(const T& c, const ArithVec<T, V, N>& v) {
+	V res;
+	for (int i = 0; i < N; i++) {
+		res[i] = c - v[i];
+	}
+	return res;
+}
 
 template <class T, class V, unsigned int N>
 inline T dot(const ArithVec<T, V, N>& v0, const ArithVec<T, V, N>& v1) {
@@ -277,6 +312,17 @@ inline V max(const ArithVec<T, V, N>& v0, const ArithVec<T, V, N>& v1) {
 	return v;
 }
 
+inline float min(const float& a, const float& b) {
+	return a < b ? a : b;
+}
+
+inline float max(const float& a, const float& b) {
+	return a > b ? a : b;
+}
+
+inline float abs(const float& c) {
+	return c < 0 ? -c : c;
+}
 
 template <class T, class V, unsigned int N>
 inline std::ostream& operator<<(std::ostream&os, const ArithVec<T, V, N>& v)

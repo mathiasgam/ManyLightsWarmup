@@ -80,7 +80,7 @@ bool LBVHStructure::closest_hit_recurse(Ray& ray, HitInfo& hit, Node& node, cons
 
 	//std::cout << "node: " << i << ", type: " << node.type << ", depth: " << hit.trace_depth << "\n";
 	bool hashit = false;
-	if (node.bbox.intersect(ray)) {
+	if (node.bbox.intersect(ray, dirfrac)) {
 		if (node.type == NodeType::Leaf) {
 			const Primitive p = primitives[node.primitive];
 			if (p.Object->intersect(ray, hit, p.index)) {
@@ -115,7 +115,7 @@ bool LBVHStructure::closest_hit_recurse(Ray& ray, HitInfo& hit, Node& node, cons
 
 bool LBVHStructure::any_hit_recurse(Ray&ray, Node& node, const Vec3f& dirfrac) const
 {
-	if (node.bbox.intersect(ray)) {
+	if (node.bbox.intersect(ray, dirfrac)) {
 		if (node.type == NodeType::Leaf) {
 			const Primitive& p = primitives[node.primitive];
 			if (p.Object->intersect(ray, p.index)) {

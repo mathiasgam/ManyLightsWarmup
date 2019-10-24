@@ -30,7 +30,7 @@ bool intersect_triangle(const Ray& ray,
 
 	// Find barycentric coordinates
 	Vec3f n_tmp = cross(o_to_v0, ray.direction);
-	v = dot(n_tmp, e1)*q;
+	v = dot(n_tmp, e1) * q;
 	if (v < 0.0f)
 		return false;
 	w = dot(n_tmp, e0)*q;
