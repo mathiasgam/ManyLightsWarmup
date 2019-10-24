@@ -68,7 +68,7 @@ void prepareScene(Scene* scene) {
 	//scene->AddLight(Vec3f(15, 10, 0), light_color * 100);
 	//scene->AddLight(Vec3f(24, 10, 0), light_color * 100);
 
-	const int num_lights = 1000;
+	const int num_lights = 100;
 
 	addLightCluster(scene, Vec3f(0.0f, 10.0f, 0.0f), Vec3f(2.0f), light_color * intensity, num_lights * 0.2);
 	addLightCluster(scene, Vec3f(10, 10, 0), Vec3f(2.0f), light_color * intensity, num_lights * 0.2);
@@ -95,7 +95,7 @@ int main() {
 	prepareScene(scene);
 
 	RayTracer* tracer = new RayTracer(scene);
-	tracer->SetLightThreshold(0.01f);
+	tracer->SetLightThreshold(0.02f);
 
 	// start timing
 	std::clock_t start;

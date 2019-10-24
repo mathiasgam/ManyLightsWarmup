@@ -22,18 +22,34 @@ void swap(float& a, float& b) {
 
 bool AABB::intersect(const Ray& ray, Vec3f& dirfrac) const
 {
-	float tmin = ray.t_min;
+	/*float tmin = ray.t_min;
 	float tmax = ray.t_max;
 
 	for (int i = 0; i < 3; ++i) {
 		float t1 = (p_min[i] - ray.center[i])*dirfrac[i];
 		float t2 = (p_max[i] - ray.center[i])*dirfrac[i];
 
-		tmin = fmaxf(tmin, fminf(t1, t2));
+
+		tmin = fmaxf(tmin, fminf(t1, t2)); // use vector min and max
 		tmax = fminf(tmax, fmaxf(t1, t2));
 	}
 
-	return tmax > fmaxf(tmin, 0.0);
+	return tmax > fmaxf(tmin, 0.0f);
+
+	*/
+
+	
+	float tmin = ray.t_min;
+	float tmax = ray.t_max;
+
+	Vec3f t1 = (p_min - ray.center) * dirfrac;
+	Vec3f t2 = (p_max - ray.center) * dirfrac;
+
+	tmin = min(t1, t2).max_componont(); // use vector min and max
+	tmax = max(t1, t2).min_componont();
+
+	return tmax > fmaxf(tmin, 0.0f);
+	
 }
 
 Vec3f AABB::center()const

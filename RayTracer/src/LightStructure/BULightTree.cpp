@@ -124,6 +124,7 @@ void BULightTree::SearchLights(std::vector<PointLight*>& out, LightNode* node, V
 	}
 	float dist = (pos - node->bbox.center()).length();
 	float area = node->bbox.area();
+	float diagoal = (node->bbox.p_max - node->bbox.p_min).length();
 	//std::cout << area << std::endl;
 	if (area / (dist * dist) < threshold) {
 		out.push_back(node->reprecentative);

@@ -67,21 +67,21 @@ public:
 	constexpr unsigned int getDim() { return N; }
 
 	/// Const index operator
-	const T& operator [] (unsigned int i) const
+	inline const T& operator [] (unsigned int i) const
 	{
 		assert(i < N);
 		return data[i];
 	}
 
 	/// Non-const index operator
-	T& operator [] (unsigned int i)
+	inline T& operator [] (unsigned int i)
 	{
 		assert(i < N);
 		return data[i];
 	}
 
 	/// Assignment addition with scalar
-	bool operator==(V v)
+	inline bool operator==(V v)
 	{
 		for (int i = 0; i < N; i++) {
 			if (data[i] != v[i]) {
@@ -92,7 +92,7 @@ public:
 	}
 
 	/// Assignment addition with scalar
-	V & operator+=(T c)
+	inline V & operator+=(T c)
 	{
 		for (int i = 0; i < N; i++) {
 			data[i] += c;
@@ -101,7 +101,7 @@ public:
 	}
 
 	/// Assignment subtraction with scalar
-	V & operator-=(T c)
+	inline V & operator-=(T c)
 	{
 		for (int i = 0; i < N; i++) {
 			data[i] -= c;
@@ -110,7 +110,7 @@ public:
 	}
 
 	/// Assignment multiplication with scalar
-	V & operator*=(T c)
+	inline V & operator*=(T c)
 	{
 		for (int i = 0; i < N; i++) {
 			data[i] *= c;
@@ -119,7 +119,7 @@ public:
 	}
 
 	/// Assignment division with scalar
-	V & operator/=(T c)
+	inline V & operator/=(T c)
 	{
 		for (int i = 0; i < N; i++) {
 			data[i] /= c;
@@ -128,7 +128,7 @@ public:
 	}
 
 	/// Assignment addition with vector
-	V & operator+=(V const &other)
+	inline V & operator+=(V const &other)
 	{
 		for (int i = 0; i < N; i++) {
 			data[i] += other[i];
@@ -137,7 +137,7 @@ public:
 	}
 
 	/// Assignment subtraction with vector
-	V & operator-=(V const &other)
+	inline V & operator-=(V const &other)
 	{
 		for (int i = 0; i < N; i++) {
 			data[i] -= other[i];
@@ -146,7 +146,7 @@ public:
 	}
 
 	/// Assignment multiplication with vector
-	V & operator*=(V const &other)
+	inline V & operator*=(V const &other)
 	{
 		for (int i = 0; i < N; i++) {
 			data[i] *= other[i];
@@ -155,7 +155,7 @@ public:
 	}
 
 	/// Assignment division with vector
-	V & operator/=(V const &other)
+	inline V & operator/=(V const &other)
 	{
 		for (int i = 0; i < N; i++) {
 			data[i] /= other[i];
@@ -163,7 +163,7 @@ public:
 		return static_cast<V&>(*this);
 	}
 
-	V operator-() const
+	inline V operator-() const
 	{
 		V v_new;
 		for (int i = 0; i < N; i++) {
@@ -175,7 +175,7 @@ public:
 	// #### #### #### #### #### #### #### ####
 	// #### Binary expressions
 
-	V operator * (const ArithVec<T,V,N> &other) const {
+	inline V operator * (const ArithVec<T,V,N> &other) const {
 		V res;
 		for (int i = 0; i < N; i++) {
 			res[i] = data[i] * other[i];
@@ -183,21 +183,21 @@ public:
 		return res;
 	}
 
-	V operator / (const ArithVec<T, V, N> &other) const {
+	inline V operator / (const ArithVec<T, V, N> &other) const {
 		V res;
 		for (int i = 0; i < N; i++) {
 			res[i] = data[i] / other[i];
 		}
 		return res;
 	}
-	V operator - (const ArithVec<T, V, N> &other) const {
+	inline V operator - (const ArithVec<T, V, N> &other) const {
 		V res;
 		for (int i = 0; i < N; i++) {
 			res[i] = data[i] - other[i];
 		}
 		return res;
 	}
-	V operator + (const ArithVec<T, V, N> &other) const {
+	inline V operator + (const ArithVec<T, V, N> &other) const {
 		V res;
 		for (int i = 0; i < N; i++) {
 			res[i] = data[i] + other[i];
@@ -205,7 +205,7 @@ public:
 		return res;
 	}
 
-	V operator * (const T &c) const {
+	inline V operator * (const T &c) const {
 		V res;
 		for (int i = 0; i < N; i++) {
 			res[i] = data[i] * c;
@@ -213,21 +213,21 @@ public:
 		return res;
 	}
 
-	V operator / (const T &c) const {
+	inline V operator / (const T &c) const {
 		V res;
 		for (int i = 0; i < N; i++) {
 			res[i] = data[i] / c;
 		}
 		return res;
 	}
-	V operator - (const T &c) const {
+	inline V operator - (const T &c) const {
 		V res;
 		for (int i = 0; i < N; i++) {
 			res[i] = data[i] - c;
 		}
 		return res;
 	}
-	V operator + (const T &c) const {
+	inline V operator + (const T &c) const {
 		V res;
 		for (int i = 0; i < N; i++) {
 			res[i] = data[i] + c;
@@ -236,14 +236,13 @@ public:
 	}
 
 	/// Sum of all elements
-	T element_sum() const {
+	inline T element_sum() const {
 		float t = 0;
 		for (int i = 0; i < N; i++) {
 			t += data[i];
 		}
 		return t;
 	}
-
 
 }; // end of member functions
 
