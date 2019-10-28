@@ -24,7 +24,12 @@ void Scene::AddMesh(const char* filename, const Vec3f color, Vec3f transform)
 void Scene::AddPoint(const Vec3f position, const float radius)
 {
 	Point* p = new Point(position, radius);
-	meshes.push_back(p);
+	visuals.push_back(p);
+}
+
+void Scene::AddLine(const Vec3f p1, const Vec3f p2, const float radius, Vec3f color) {
+	Line* l = new Line(p1, p2, radius, color);
+	visuals.push_back(l);
 }
 
 void Scene::AddPlane(const Vec3f position, const Vec3f color, const Vec3f normal)
@@ -53,7 +58,17 @@ void Scene::prepare()
 		AddPoint(light->position, 0.05f);
 	}
 
+	unsigned int edges = 0;
+	for (Line& line : BVHLights.GetTreeEdges()) {
+		AddLine(line.p1, line.p2, 0.01f, line.color);
+		edges++;
+	}
+
+	std::cout << "num edges: " << edges << std::endl;
+
 	BVHMesh.init(meshes, planes);
+	std::vector<const Plane*> tmp = std::vector<const Plane*>();
+	BVHVisuals.init(visuals, tmp);
 }
 
 void Scene::SetAmbient(const Vec3f& color)

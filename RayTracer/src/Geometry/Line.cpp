@@ -1,16 +1,34 @@
 #include "Line.h"
 
-Line::Line(const Vec3f p1, const Vec3f p2, const float radius):
-	p1(p1), p2(p2), radius(radius)
+Line::Line(const Vec3f _p1, const Vec3f _p2, const float _radius, Vec3f _color)
 {
+	p1 = _p1;
+	p2 = _p2;
+	radius = _radius;
+	color = _color;
 }
 
 Line::~Line()
 {
 }
 
-bool Line::intersect(Ray ray, HitInfo&, Vec3f& dirfrac) const
+bool Line::intersect(Ray& ray, HitInfo& hit, unsigned int i) const
 {
+	const Vec3f line = p2 - p1;
+	const Vec3f diff = p1 - ray.center;
+	const Vec3f x = cross(ray.direction, line).normalized();
+
+	float t = dot(x, diff);
+	if (fabsf(t) < radius) {
+
+		hit.t = ray.t_min;
+		hit.position = ray.center + ray.direction * ray.t_min;
+		//hit.t = t;
+		//hit.position = p;
+		hit.normal = -ray.direction;
+		hit.color = color;
+		return true;
+	}
 	return false;
 }
 

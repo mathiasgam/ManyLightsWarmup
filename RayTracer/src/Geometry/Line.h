@@ -6,16 +6,16 @@ class Line :
 	public Geometry
 {
 private:
+
+public:
 	Vec3f p1;
 	Vec3f p2;
 	float radius;
 
-public:
-	Line(const Vec3f p1, const Vec3f p2, const float radius);
+	Line(const Vec3f p1, const Vec3f p2, const float radius, Vec3f color);
 	~Line();
 
-	bool intersect(Ray ray, HitInfo&, Vec3f& dirfrac) const;
-	bool intersect(Ray ray, Vec3f& dirfrac) const { return intersect(ray, HitInfo(), dirfrac); }
+	bool intersect(Ray& ray, HitInfo& hit, unsigned int i) const;
 
 	/// return the number of primitives in the geometry
 	virtual size_t num_primitives() const;

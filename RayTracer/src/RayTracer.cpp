@@ -26,11 +26,21 @@ TraceResult RayTracer::trace(Ray ray)
 {
 	TraceResult result;
 	result.color = Vec3f(0.0f);
+	result.num_rays = 0;
+	result.num_occlusion_rays = 0;
 	HitInfo& hit = result.hit;
 
 	const float epsilon = p_scene->scene_epsilon;
 
 	const int samples = 50;
+
+	HitInfo visualInfo = HitInfo();
+	if (p_scene->trace_visuals(Ray(ray), visualInfo)) {
+		result.visualColor = hit.color;
+	}
+	else {
+		result.visualColor = Vec3f(0, 0, 0);
+	}
 
 	int light_count = 0;
 	if (p_scene->closest_hit(ray, hit)) {
@@ -49,6 +59,7 @@ TraceResult RayTracer::trace(Ray ray)
 		//}
 
 		result.color += SampleLights(hit.position, normal, hit.color, light_count);
+		result.num_occlusion_rays += light_count;
 
 		//// Add ambient light
 		result.color += hit.color * p_scene->GetAmbient(hit.position);
@@ -62,6 +73,7 @@ TraceResult RayTracer::trace(Ray ray)
 		
 	}
 	result.num_lights = light_count;
+	result.num_rays += 1;
 	return result;
 }
 
@@ -77,6 +89,7 @@ Vec3f RayTracer::sample(Ray ray, int bounces) const
 
 	const float epsilon = p_scene->scene_epsilon;
 	int light_count = 0;
+
 	if (p_scene->closest_hit(ray, hit)) {
 		Vec3f normal = hit.normal.normalized();
 		if (dot(normal, ray.direction) > 0)

@@ -8,8 +8,11 @@
 struct TraceResult
 {
 	Vec3f color;
+	Vec3f visualColor;
 	HitInfo hit;
 	unsigned int num_lights;
+	unsigned int num_rays;
+	unsigned int num_occlusion_rays;
 };
 
 class RayTracer

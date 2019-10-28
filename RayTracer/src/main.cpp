@@ -70,7 +70,7 @@ void prepareScene(Scene* scene) {
 
 	const int num_lights = 100;
 
-	addLightCluster(scene, Vec3f(0.0f, 5.0f, 0.0f), Vec3f(1,1,1), light_color * intensity, num_lights * 0.2);
+	addLightCluster(scene, Vec3f(0.0f, 1.0f, 0.0f), Vec3f(1,1,1), light_color * intensity * 0.1f, num_lights * 0.2);
 	addLightCluster(scene, Vec3f(10, 5, 0), Vec3f(1,1,1), light_color * intensity, num_lights * 0.2);
 	addLightCluster(scene, Vec3f(-10, 5, -3), Vec3f(1,1,1), light_color * intensity, num_lights * 0.6);
 }
@@ -87,9 +87,9 @@ int main() {
 
 	// create the camera
 	PinHoleCamera cam = PinHoleCamera();
-	cam.SetPosition(Vec3f(-2.5f, 1.0f, 0.0f));
-	//cam.SetPosition(Vec3f(-20.0f, 10.0f, 0.0f));
-	cam.LookAt(Vec3f(0.0f, 0.5f, 0.0f));
+	//cam.SetPosition(Vec3f(-2.5f, 1.0f, 0.0f));
+	cam.SetPosition(Vec3f(-20.0f, 10.0f, 10.0f));
+	cam.LookAt(Vec3f(0.0f, 2.5f, 0.0f));
 
 	// scene added as pointer, for easier access over multiple threads
 	Scene* scene = new Scene();
@@ -112,26 +112,36 @@ int main() {
 	Image img(width, height);
 	Image img_lights(width, height);
 	Image img_depth(width, height);
+	Image img_visual(width, height);
 
 
 	// start the rendering process
 	std::cout << "Rendering image\n";
 	start = std::clock();
 
-	float epsilon = 0.001f;
+	float epsilon = 0.01f;
 
 	std::size_t max = static_cast<size_t>(width * height);
+
+	struct Report {
+		unsigned int num_rays;
+		unsigned int num_occlusion_rays;
+	};
 
 	// find the number of cores available
 	std::size_t cores = std::thread::hardware_concurrency();
 	volatile std::atomic<std::size_t> count(0);
-	std::vector<std::future<void>> future_vector;
+	std::vector<std::future<Report>> future_vector;
 
 	// add Async processies until all cores have one
 	while (cores--)
 		future_vector.emplace_back(
-			std::async([=, &cam, &count, &img, &img_depth, &img_lights]()
+			std::async([=, &cam, &count, &img, &img_depth, &img_lights, &img_visual]()
 				{
+					Report report = {};
+					report.num_rays = 0;
+					report.num_occlusion_rays = 0;
+
 					while (true)
 					{
 						// get the next pixel
@@ -156,30 +166,48 @@ int main() {
 
 						TraceResult res = tracer->trace(ray);
 
+						report.num_rays += res.num_rays;
+						report.num_occlusion_rays += res.num_occlusion_rays;
+
 						color += res.color;
 						//color = (res.hit.normal + 1.0f) / 2.0f;
 						fd += 1.0f - (1.0f / (res.hit.trace_depth * 0.01f + 1.0f));
 						f += static_cast<float>(res.num_lights) / scene->GetNumLights();
 
 						img.setPixel(i, j, color);
+						img_visual.setPixel(i, j, res.visualColor);
 						img_lights.setPixel(i, j, f);
 						img_depth.setPixel(i, j, fd);
 					}
+					return report;
 				}));
+
+	Report report_final = {};
+	report_final.num_rays = 0;
+	report_final.num_occlusion_rays = 0;
 
 	// Wait for all pixels to be processed
 	for (auto& future : future_vector) {
 		future.wait();
+		Report report_tmp = future.get();
+		report_final.num_rays += report_tmp.num_rays;
+		report_final.num_occlusion_rays += report_tmp.num_occlusion_rays;
 	}
 
 
 	std::cout << std::endl;
 
-	std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC) << " s" << std::endl;
+	const double seconds = (std::clock() - start) / (double)(CLOCKS_PER_SEC);
+	const double mil_rays = (report_final.num_rays + report_final.num_occlusion_rays) / 10e6;
+	std::cout << "\nReport: \n";
+	std::cout << "- Time: " << seconds << " sec" << std::endl;
+
+	std::cout << "- M Rays: " << mil_rays << "\n- M Rays / sec: " << mil_rays / seconds << std::endl;
 
 	img.save_as("Test.png");
 	img_depth.save_as("Trace_depth.png");
 	img_lights.save_as("Trace_lights.png");
+	img_visual.save_as("Visual.png");
 
 	// cleanup memory
 	delete tracer;

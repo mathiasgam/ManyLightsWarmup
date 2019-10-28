@@ -25,7 +25,10 @@ private:
 
 	std::vector<PointLight*> lights;
 
+	std::vector<const Geometry*> visuals;
+
 	LBVHStructure BVHMesh;
+	LBVHStructure BVHVisuals;
 	BULightTree BVHLights;
 
 	Vec3f ambient = Vec3f(0.1f, 0.1f, 0.1f);
@@ -35,11 +38,12 @@ public: /// Public variables
 	const float scene_epsilon = 0.0001f;
 
 public: /// Public Functions
-	Scene() : meshes(0), planes(0), lights(0), BVHMesh(), BVHLights() {}
+	Scene() : meshes(0), planes(0), lights(0), visuals(0), BVHMesh(), BVHVisuals(), BVHLights() {}
 	~Scene();
 
 	void AddMesh(const char* filename, const Vec3f color, Vec3f transform);
 	void AddPoint(const Vec3f position, const float radius);
+	void AddLine(const Vec3f p1, const Vec3f p2, const float radius, Vec3f color);
 	void AddPlane(const Vec3f position, const Vec3f color, const Vec3f normal);
 	void AddLight(const Vec3f position, const Vec3f color);
 
@@ -52,6 +56,7 @@ public: /// Public Functions
 
 	bool closest_hit(Ray& ray, HitInfo& hit) const { return BVHMesh.closest_hit(ray, hit); }
 	bool any_hit(Ray& ray) const { return BVHMesh.any_hit(ray); }
+	bool trace_visuals(Ray& ray, HitInfo& hit) const { return BVHVisuals.closest_hit(ray, hit); }
 
 	std::vector<PointLight*> GetLights(Vec3f position, Vec3f normal, float threshold) const { return BVHLights.GetLights(position, normal, threshold); }
 	void SetAmbient(const Vec3f& color);

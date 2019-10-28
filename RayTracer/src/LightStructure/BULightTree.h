@@ -10,6 +10,8 @@ http://graphics.cs.cmu.edu/projects/aac/aac_build.pdf
 #include "LightStructure.h"
 #include "Structure/AABB.h"
 
+#include "Geometry/Line.h"
+
 class BULightTree : LightStructure
 {
 private:
@@ -55,12 +57,15 @@ public:
 
 	virtual void init(std::vector<PointLight*> lights);
 	virtual std::vector<PointLight*> GetLights(Vec3f position, Vec3f normal, float threshold) const;
+	virtual std::vector<Line> BULightTree::GetTreeEdges() const;
 
 private:
 	void SearchLights(std::vector<PointLight*>& out, LightNode* node, Vec3f pos, Vec3f normal, float threshold) const;
 
 	float distance(const PointLight* p1, const PointLight* p2);
 	PointLight* MergeLights(PointLight* A, PointLight* B);
+
+	virtual void BULightTree::GetTreeEdgesRecurse(std::vector<Line>& lines, const LightNode* node, Vec3f color) const;
 
 	static void deleteNode(LightNode* node);
 };
