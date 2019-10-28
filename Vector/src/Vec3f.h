@@ -22,8 +22,8 @@ public:
 	inline Vec3f normalized() const;
 	inline float length() const;
 
-	inline float min_componont();
-	inline float max_componont();
+	inline float min_componont() const;
+	inline float max_componont() const;
 
 };
 
