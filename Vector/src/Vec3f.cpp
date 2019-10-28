@@ -12,7 +12,12 @@ Vec3f Vec3f::normalized() const
 
 float Vec3f::length() const
 {
-	return sqrt(data[0] * data[0] + data[1] * data[1] + data[2] * data[2]);;
+	return sqrt(data[0] * data[0] + data[1] * data[1] + data[2] * data[2]);
+}
+
+float Vec3f::sqr_length() const
+{
+	return data[0] * data[0] + data[1] * data[1] + data[2] * data[2];
 }
 
 float Vec3f::min_componont() const
