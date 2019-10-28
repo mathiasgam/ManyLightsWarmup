@@ -293,6 +293,14 @@ inline T sqr_length(const ArithVec<T, V, N>& v) {
 	return (v*v).element_sum();
 }
 
+template <class T, class V, unsigned int N>
+inline V abs(const ArithVec<T, V, N>& v) {
+	V res;
+	for (int i = 0; i < N; i++) {
+		res[i] = v[i] < 0 ? -v[i] : v[i];
+	}
+	return res;
+}
 
 template<class T, class V, unsigned int N>
 inline V min(const ArithVec<T, V, N>& v0, const ArithVec<T, V, N>& v1) {

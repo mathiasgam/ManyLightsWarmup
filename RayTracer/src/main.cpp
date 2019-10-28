@@ -68,11 +68,11 @@ void prepareScene(Scene* scene) {
 	//scene->AddLight(Vec3f(15, 10, 0), light_color * 100);
 	//scene->AddLight(Vec3f(24, 10, 0), light_color * 100);
 
-	const int num_lights = 100;
+	const int num_lights = 1000;
 
-	addLightCluster(scene, Vec3f(0.0f, 1.0f, 0.0f), Vec3f(1,1,1), light_color * intensity * 0.1f, num_lights * 0.2);
-	addLightCluster(scene, Vec3f(10, 5, 0), Vec3f(1,1,1), light_color * intensity, num_lights * 0.2);
-	addLightCluster(scene, Vec3f(-10, 5, -3), Vec3f(1,1,1), light_color * intensity, num_lights * 0.6);
+	addLightCluster(scene, Vec3f(0.0f, 3.0f, 0.0f), Vec3f(2.0f,2.0f,2.0f), light_color * intensity * 0.5f, num_lights);
+	//addLightCluster(scene, Vec3f(10, 5, 0), Vec3f(2,1,2), light_color * intensity, num_lights * 0.2);
+	//addLightCluster(scene, Vec3f(-10, 5, -3), Vec3f(2,2,2), light_color * intensity, num_lights * 0.2);
 }
 
 int main() {
@@ -89,7 +89,7 @@ int main() {
 	PinHoleCamera cam = PinHoleCamera();
 	//cam.SetPosition(Vec3f(-2.5f, 1.0f, 0.0f));
 	cam.SetPosition(Vec3f(-20.0f, 10.0f, 10.0f));
-	cam.LookAt(Vec3f(0.0f, 2.5f, 0.0f));
+	cam.LookAt(Vec3f(0.0f, 0.5f, 0.0f));
 
 	// scene added as pointer, for easier access over multiple threads
 	Scene* scene = new Scene();
@@ -119,7 +119,7 @@ int main() {
 	std::cout << "Rendering image\n";
 	start = std::clock();
 
-	float epsilon = 0.01f;
+	float epsilon = 0.0001f;
 
 	std::size_t max = static_cast<size_t>(width * height);
 

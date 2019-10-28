@@ -10,6 +10,7 @@
 #include "Sampling.h"
 
 
+
 BULightTree::BULightTree() : ReprecentativeLights(0)
 {
 }
@@ -45,14 +46,33 @@ void BULightTree::init(std::vector<PointLight*> lights)
 		clusters.insert(node);
 	}
 
-	struct CompareDist {
-		bool operator()(NodePair const& p1, NodePair const& p2)
-		{
-			return p1.dist > p2.dist;
+	class custom_priority_queue : public std::priority_queue<NodePair, std::vector<NodePair>, CompareDist>
+	{
+	public:
+		bool remove(const LightNode* value) {
+			bool res = false;
+			unsigned int size = 0;
+			auto itLeft = this->c.begin();
+			auto itRight = this->c.begin()++;
+			while (itRight != this->c.end()) {
+				if (itRight->n1 == value || itRight->n2 == value) {
+					itRight++;
+					continue;
+				}
+				*itLeft = *itRight;
+				itLeft++;
+				itRight++;
+				size++;
+			}
+			this->c.resize(size);
+			//std::make_heap(this->c.begin(), this->c.end(), this->comp);
+			return res;
 		}
 	};
 
-	std::priority_queue<NodePair, std::vector<NodePair>, CompareDist> Queue = std::priority_queue<NodePair, std::vector<NodePair>, CompareDist>();
+	// min queue
+	//std::priority_queue<NodePair, std::vector<NodePair>, CompareDist> Queue = std::priority_queue<NodePair, std::vector<NodePair>, CompareDist>();
+	custom_priority_queue Queue = custom_priority_queue();
 
 	for (LightNode* c1 : clusters) {
 		for (LightNode* c2 : clusters) {
@@ -94,6 +114,9 @@ void BULightTree::init(std::vector<PointLight*> lights)
 			clusters.erase(left);
 			clusters.erase(right);
 			clusters.insert(node);
+
+			Queue.remove(left);
+			Queue.remove(right);
 
 			for (LightNode* c : clusters) {
 				if (c != node) {
@@ -144,29 +167,24 @@ void BULightTree::SearchLights(std::vector<PointLight*>& out, LightNode* node, V
 
 	float dist = (pos - node->reprecentative->position).length();
 	float radius = (node->bbox.p_max - node->bbox.p_min).length() / 2.0f;
+	if (radius <= 0.0001f)
+		std::cout << "radius: " << radius << std::endl;
+	//assert(radius <= 0.00000f);
 	float min_dist = dist - radius;
+	float max_dist = dist + radius;
 
 	// Geometric term
 	//float G = 1.0f / (dist * dist);
 
-	float intensity = node->reprecentative->color.max_componont();
-	float rep = intensity / (dist * dist);
-	float worst = intensity / (min_dist * min_dist);
+	Vec3f intensity = node->reprecentative->color;
+	Vec3f rep = intensity / (dist * dist);
+	Vec3f worst = intensity / (max_dist * max_dist);
 
-	assert(dist > min_dist);
-	if (pos[0] < 10 && pos[0] > -10 && pos[2] < 10 && pos[2] > -10) {
-		//std::cout << "diff: " << dist - min_dist << std::endl;
-	}
-	else {
-		return;
-	}
-
-	assert(rep < 0.0001f);
-	assert(worst < 0.0001f);
-	float error = fabsf(rep - worst) / rep;
+	Vec3f diff = abs(rep - worst);
+	Vec3f error = diff / rep;
 
 	//std::cout << area << std::endl;
-	if (error <= threshold) {
+	if (error.element_sum() < threshold || diff.max_componont() < 0.002f) {
 		out.push_back(node->reprecentative);
 	}
 	else {
@@ -190,13 +208,13 @@ PointLight* BULightTree::MergeLights(PointLight* A, PointLight* B)
 	PointLight* light = nullptr;
 	if (random(0, 1) < p) {
 		Vec3f pos = A->position;
-		Vec3f color = A->color + B->color;
+		Vec3f color = A->color / p;
 		light = new PointLight(pos, color);
 		ReprecentativeLights.push_back(light);
 	}
 	else {
 		Vec3f pos = B->position;
-		Vec3f color = B->color + A->color;
+		Vec3f color = B->color / (1.0f - p);
 		light = new PointLight(pos, color);
 		ReprecentativeLights.push_back(light);
 	}

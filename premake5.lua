@@ -31,6 +31,9 @@ workspace "ManyLights"
   		defines "/GL"
   		defines "/LTCG:incremental"
 
+  	filter "configurations:Debug"
+  		defines "DEBUG"
+
 
 
 

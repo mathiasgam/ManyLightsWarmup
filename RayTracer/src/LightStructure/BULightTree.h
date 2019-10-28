@@ -45,7 +45,12 @@ private:
 		float dist;
 	};
 
-	
+	struct CompareDist {
+		bool operator()(NodePair const& p1, NodePair const& p2)
+		{
+			return p1.dist > p2.dist;
+		}
+	};
 
 
 	std::vector<PointLight*> ReprecentativeLights;
