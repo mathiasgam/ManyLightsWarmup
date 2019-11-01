@@ -53,6 +53,13 @@ std::vector<PointLight*> LightTree::GetLights(Vec3f sample_position, Vec3f sampl
 	return lights;
 }
 
+std::vector<Line> LightTree::GetTreeEdges() const
+{
+	std::vector<Line> lines = std::vector<Line>();
+	GetTreeEdgesRecurse(lines, root, Vec3f(1, 0, 0));
+	return lines;
+}
+
 void LightTree::SearchLights(std::vector<PointLight*>& out, LightNode* node, Vec3f pos, Vec3f normal, float threshold) const
 {
 	if (node->type == NodeType::Leaf) {
@@ -62,7 +69,7 @@ void LightTree::SearchLights(std::vector<PointLight*>& out, LightNode* node, Vec
 	float dist = (pos - node->bbox.center()).length();
 	float area = node->bbox.area();
 	//std::cout << area << std::endl;
-	if (area / (dist*dist) < threshold) {
+	if (area / (dist * dist) < threshold) {
 		out.push_back(node->reprecentative);
 	}
 	else {
@@ -169,6 +176,21 @@ PointLight* LightTree::MergeLights(PointLight* A, PointLight* B)
 	PointLight* light = new PointLight(pos, color);
 	ReprecentativeLights.push_back(light);
 	return light;
+}
+
+void LightTree::GetTreeEdgesRecurse(std::vector<Line>& lines, const LightNode* node, Vec3f color) const
+{
+	if (node->type == NodeType::Leaf) {
+		return;
+	}
+	else if (node->type == NodeType::Internal) {
+		lines.emplace_back(node->reprecentative->position, node->ChildA->reprecentative->position, 0.005f, color);
+		lines.emplace_back(node->reprecentative->position, node->ChildB->reprecentative->position, 0.005f, color);
+		GetTreeEdgesRecurse(lines, node->ChildA, color * 0.9f);
+		GetTreeEdgesRecurse(lines, node->ChildB, color * 0.9f);
+		return;
+	}
+	assert(false);
 }
 
 void LightTree::deleteNode(LightTree::LightNode* node)

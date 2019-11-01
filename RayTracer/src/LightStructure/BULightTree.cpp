@@ -184,7 +184,7 @@ void BULightTree::SearchLights(std::vector<PointLight*>& out, LightNode* node, V
 	Vec3f error = diff / rep;
 
 	//std::cout << area << std::endl;
-	if (error.element_sum() < threshold || diff.max_componont() < 0.002f) {
+	if (error.element_sum() < threshold || diff.max_componont() < 0.001f) {
 		out.push_back(node->reprecentative);
 	}
 	else {

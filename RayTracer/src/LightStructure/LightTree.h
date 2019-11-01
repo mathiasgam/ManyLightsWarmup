@@ -6,6 +6,8 @@
 #include "Structure/AABB.h"
 #include "MortonCode.h"
 
+#include "Geometry/Line.h"
+
 #include <vector>
 
 class LightTree : LightStructure
@@ -48,6 +50,7 @@ public:
 
 	virtual void init(std::vector<PointLight*> lights);
 	std::vector<PointLight*> GetLights(Vec3f sample_position, Vec3f sample_normal, float threshold) const;
+	virtual std::vector<Line> GetTreeEdges() const;
 
 private:
 
@@ -58,6 +61,8 @@ private:
 
 	void CalculateReprecentativeLights(LightNode* node);
 	PointLight* MergeLights(PointLight* A, PointLight* B);
+
+	virtual void GetTreeEdgesRecurse(std::vector<Line>& lines, const LightNode* node, Vec3f color) const;
 
 	static void deleteNode(LightNode* node);
 

@@ -54,6 +54,7 @@ void prepareScene(Scene* scene) {
 
 	// add some models to the scene
 	//scene->AddMesh("../models/san-miguel_tri.obj", color(196, 160, 106), Vec3f(0, 0, 0));
+	scene->AddMesh("../models/buddha.obj", color(222, 10, 2), Vec3f(-1.0f, 0.3f, 0.0f));
 	scene->AddMesh("../models/dragon.obj", color(222, 10, 2), Vec3f(0.0f, 0.3f, 0.0f));
 	scene->AddMesh("../models/bunny.obj", color(122, 75, 39), Vec3f(1.0f, -0.3f, 1.0f));
 	scene->AddPlane(Vec3f(0, 0, 0), color(92, 85, 74), Vec3f(0, 1, 0));
@@ -68,7 +69,7 @@ void prepareScene(Scene* scene) {
 	//scene->AddLight(Vec3f(15, 10, 0), light_color * 100);
 	//scene->AddLight(Vec3f(24, 10, 0), light_color * 100);
 
-	const int num_lights = 1000;
+	const int num_lights = 100;
 
 	addLightCluster(scene, Vec3f(0.0f, 3.0f, 0.0f), Vec3f(2.0f,2.0f,2.0f), light_color * intensity * 0.5f, num_lights);
 	//addLightCluster(scene, Vec3f(10, 5, 0), Vec3f(2,1,2), light_color * intensity, num_lights * 0.2);
@@ -88,8 +89,9 @@ int main() {
 	// create the camera
 	PinHoleCamera cam = PinHoleCamera();
 	//cam.SetPosition(Vec3f(-2.5f, 1.0f, 0.0f));
-	cam.SetPosition(Vec3f(-20.0f, 10.0f, 10.0f));
-	cam.LookAt(Vec3f(0.0f, 0.5f, 0.0f));
+	cam.SetPosition(Vec3f(-7.0f, 6.0f, 0.0f));
+	//cam.SetPosition(Vec3f(-20.0f, 10.0f, 10.0f));
+	cam.LookAt(Vec3f(0.0f, 3.0f, 0.0f));
 
 	// scene added as pointer, for easier access over multiple threads
 	Scene* scene = new Scene();
