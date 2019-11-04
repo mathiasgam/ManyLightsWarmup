@@ -39,10 +39,12 @@
 
 #include "Sampling.h"
 
+#include "KdTree.h"
+
 void addLightCluster(Scene* scene, Vec3f center, Vec3f dim, Vec3f color, unsigned int N) {
 	for (int i = 0; i < N; i++) {
 		Vec3f pos = random(center - dim, center + dim);
-		scene->AddLight(pos, color / N);
+		scene->AddLight(pos, Vec3f(random(0.1f, 1.0f), random(0.1f, 1.0f), random(0.1f, 1.0f)).normalized() * color / N);
 	}
 }
 
@@ -54,8 +56,8 @@ void prepareScene(Scene* scene) {
 
 	// add some models to the scene
 	//scene->AddMesh("../models/san-miguel_tri.obj", color(196, 160, 106), Vec3f(0, 0, 0));
-	scene->AddMesh("../models/buddha.obj", color(222, 10, 2), Vec3f(-1.0f, 0.3f, 0.0f));
-	scene->AddMesh("../models/dragon.obj", color(222, 10, 2), Vec3f(0.0f, 0.3f, 0.0f));
+	scene->AddMesh("../models/buddha.obj", color(122, 10, 2), Vec3f(-1.0f, 0.3f, 0.0f));
+	scene->AddMesh("../models/dragon.obj", color(50, 122, 2), Vec3f(0.0f, 0.3f, 0.0f));
 	scene->AddMesh("../models/bunny.obj", color(122, 75, 39), Vec3f(1.0f, -0.3f, 1.0f));
 	scene->AddPlane(Vec3f(0, 0, 0), color(92, 85, 74), Vec3f(0, 1, 0));
 
@@ -64,14 +66,22 @@ void prepareScene(Scene* scene) {
 
 	scene->SetAmbient(light_color * 0.2f);
 
-	const float intensity = 50.0f;
+	const float intensity = 100.0f;
 	//scene->AddLight(Vec3f(16.0f, 5.0f, 6.0f), light_color * 100);
 	//scene->AddLight(Vec3f(15, 10, 0), light_color * 100);
 	//scene->AddLight(Vec3f(24, 10, 0), light_color * 100);
 
-	const int num_lights = 100;
+	const int num_lights = 2000;
 
-	addLightCluster(scene, Vec3f(0.0f, 3.0f, 0.0f), Vec3f(2.0f,2.0f,2.0f), light_color * intensity * 0.5f, num_lights);
+	Vec3f center = Vec3f(0.0f, 3.0f, 0.0f);
+	Vec3f dim = Vec3f(5.0f, 1.0f, 5.0f);
+	for (int i = 0; i < 10; i++) {
+		Vec3f pos = random(center - dim, center + dim);
+		Vec3f color = Vec3f(random(0.1f, 1.0f), random(0.1f, 1.0f), random(0.1f, 1.0f)).normalized();
+		addLightCluster(scene, random(center - dim, center + dim), Vec3f(2.0f), intensity / 10, num_lights / 10);
+	}
+
+	//addLightCluster(scene, Vec3f(0.0f, 1.0f, 0.0f), Vec3f(10.0f,0.5f,10.0f), light_color * intensity, num_lights);
 	//addLightCluster(scene, Vec3f(10, 5, 0), Vec3f(2,1,2), light_color * intensity, num_lights * 0.2);
 	//addLightCluster(scene, Vec3f(-10, 5, -3), Vec3f(2,2,2), light_color * intensity, num_lights * 0.2);
 }
@@ -80,8 +90,22 @@ int main() {
 	// set the seed for the standard random function with constant value for comparable results across runs
 	srand(42);
 
-	int width = 720;
-	int height = 480;
+	/*std::vector<Vec3f> points = std::vector<Vec3f>();
+	KdTree<Vec3f, 3> kdtree = KdTree<Vec3f, 3>();
+
+	for (int i = 0; i < 10; i++) {
+		points.emplace_back(random(0, 1), random(0, 1), random(0, 1));
+	}
+
+	for (Vec3f& point : points) {
+		kdtree.insert(&point);
+	}
+
+	//std::cout << "Kd-tree depth: " << kdtree.depth() << ", size: " << kdtree.size() << std::endl;
+	*/
+
+	int width = 1080;
+	int height = 720;
 	float aspect = (float)width / (float)height;
 	Vec2f pixel_dim = Vec2f(1.0f / width, 1.0f / height);
 	std::cout << "Width: " << width << ", Height: " << height << ", Aspect: " << aspect << std::endl;
@@ -89,9 +113,9 @@ int main() {
 	// create the camera
 	PinHoleCamera cam = PinHoleCamera();
 	//cam.SetPosition(Vec3f(-2.5f, 1.0f, 0.0f));
-	cam.SetPosition(Vec3f(-7.0f, 6.0f, 0.0f));
+	cam.SetPosition(Vec3f(-2.0f, 2.0f, 3.0f));
 	//cam.SetPosition(Vec3f(-20.0f, 10.0f, 10.0f));
-	cam.LookAt(Vec3f(0.0f, 3.0f, 0.0f));
+	cam.LookAt(Vec3f(0.0f, 0.5f, 0.5f));
 
 	// scene added as pointer, for easier access over multiple threads
 	Scene* scene = new Scene();
@@ -128,6 +152,7 @@ int main() {
 	struct Report {
 		unsigned int num_rays;
 		unsigned int num_occlusion_rays;
+		unsigned int num_lights;
 	};
 
 	// find the number of cores available
@@ -143,6 +168,7 @@ int main() {
 					Report report = {};
 					report.num_rays = 0;
 					report.num_occlusion_rays = 0;
+					report.num_lights = 0;
 
 					while (true)
 					{
@@ -170,6 +196,7 @@ int main() {
 
 						report.num_rays += res.num_rays;
 						report.num_occlusion_rays += res.num_occlusion_rays;
+						report.num_lights += res.num_lights;
 
 						color += res.color;
 						//color = (res.hit.normal + 1.0f) / 2.0f;
@@ -187,6 +214,7 @@ int main() {
 	Report report_final = {};
 	report_final.num_rays = 0;
 	report_final.num_occlusion_rays = 0;
+	report_final.num_lights = 0;
 
 	// Wait for all pixels to be processed
 	for (auto& future : future_vector) {
@@ -194,8 +222,8 @@ int main() {
 		Report report_tmp = future.get();
 		report_final.num_rays += report_tmp.num_rays;
 		report_final.num_occlusion_rays += report_tmp.num_occlusion_rays;
+		report_final.num_lights += report_tmp.num_lights;
 	}
-
 
 	std::cout << std::endl;
 
@@ -205,6 +233,9 @@ int main() {
 	std::cout << "- Time: " << seconds << " sec" << std::endl;
 
 	std::cout << "- M Rays: " << mil_rays << "\n- M Rays / sec: " << mil_rays / seconds << std::endl;
+
+	float avg_lights = report_final.num_lights / (width * height);
+	std::cout << "- Avg lights: " << avg_lights << ", reduction: " << avg_lights / scene->GetNumLights() << std::endl;
 
 	img.save_as("Test.png");
 	img_depth.save_as("Trace_depth.png");

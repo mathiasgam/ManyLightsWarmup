@@ -165,26 +165,28 @@ void BULightTree::SearchLights(std::vector<PointLight*>& out, LightNode* node, V
 		return;
 
 
-	float dist = (pos - node->reprecentative->position).length();
-	float radius = (node->bbox.p_max - node->bbox.p_min).length() / 2.0f;
-	if (radius <= 0.0001f)
-		std::cout << "radius: " << radius << std::endl;
-	//assert(radius <= 0.00000f);
-	float min_dist = dist - radius;
-	float max_dist = dist + radius;
+	const float dist = (pos - node->reprecentative->position).length();
+	const float radius = (node->bbox.p_max - node->bbox.p_min).length() / 2.0f;
+
+	const float min_dist = dist - radius;
+	
+	if (min_dist <= 0) {
+		SearchLights(out, node->ChildA, pos, normal, threshold);
+		SearchLights(out, node->ChildB, pos, normal, threshold);
+		return;
+	}
 
 	// Geometric term
 	//float G = 1.0f / (dist * dist);
 
-	Vec3f intensity = node->reprecentative->color;
-	Vec3f rep = intensity / (dist * dist);
-	Vec3f worst = intensity / (max_dist * max_dist);
+	const Vec3f intensity = node->reprecentative->color;
+	const Vec3f rep = intensity / (dist * dist);
+	const Vec3f worst = intensity / (min_dist * min_dist);
 
-	Vec3f diff = abs(rep - worst);
-	Vec3f error = diff / rep;
+	const Vec3f error = abs(rep - worst);
 
 	//std::cout << area << std::endl;
-	if (error.element_sum() < threshold || diff.max_componont() < 0.001f) {
+	if (error.element_sum() < threshold) {
 		out.push_back(node->reprecentative);
 	}
 	else {
@@ -208,13 +210,13 @@ PointLight* BULightTree::MergeLights(PointLight* A, PointLight* B)
 	PointLight* light = nullptr;
 	if (random(0, 1) < p) {
 		Vec3f pos = A->position;
-		Vec3f color = A->color / p;
+		Vec3f color = A->color + B->color;
 		light = new PointLight(pos, color);
 		ReprecentativeLights.push_back(light);
 	}
 	else {
 		Vec3f pos = B->position;
-		Vec3f color = B->color / (1.0f - p);
+		Vec3f color = B->color + A->color;
 		light = new PointLight(pos, color);
 		ReprecentativeLights.push_back(light);
 	}

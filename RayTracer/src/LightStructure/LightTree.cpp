@@ -66,10 +66,40 @@ void LightTree::SearchLights(std::vector<PointLight*>& out, LightNode* node, Vec
 		out.push_back(node->reprecentative);
 		return;
 	}
-	float dist = (pos - node->bbox.center()).length();
-	float area = node->bbox.area();
+
+	// Test if the bounding box is behind the surface.
+	Vec3f t1 = (node->bbox.p_min - pos) / normal;
+	Vec3f t2 = (node->bbox.p_max - pos) / normal;
+	if (max(t1, t2).max_componont() < 0.0f)
+		return;
+
+
+	float dist = (pos - node->reprecentative->position).length();
+	float radius = (node->bbox.p_max - node->bbox.p_min).length() / 2.0f;
+	//if (radius <= 0.0001f)
+	//	std::cout << "radius: " << radius << std::endl;
+	//assert(radius <= 0.00000f);
+	float min_dist = dist - radius;
+
+	if (min_dist <= 0) {
+		SearchLights(out, node->ChildA, pos, normal, threshold);
+		SearchLights(out, node->ChildB, pos, normal, threshold);
+		return;
+	}
+	//float max_dist = dist + radius;
+
+	// Geometric term
+	//float G = 1.0f / (dist * dist);
+
+	Vec3f intensity = node->reprecentative->color;
+	Vec3f rep = intensity / (dist * dist);
+	Vec3f worst = intensity / (min_dist * min_dist);
+
+	Vec3f diff = abs(rep - worst);
+	Vec3f error = diff / intensity;
+
 	//std::cout << area << std::endl;
-	if (area / (dist * dist) < threshold) {
+	if (error.element_sum() < threshold) {
 		out.push_back(node->reprecentative);
 	}
 	else {

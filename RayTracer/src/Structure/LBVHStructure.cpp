@@ -85,7 +85,7 @@ bool LBVHStructure::closest_hit_recurse(Ray& ray, HitInfo& hit, Node& node, cons
 			const Primitive p = primitives[node.primitive];
 			if (p.Object->intersect(ray, hit, p.index)) {
 				hashit = true;
-				//hit.color = p.Object->color;
+				hit.color = p.Object->color;
 				ray.t_max = hit.t;
 			}
 		}

@@ -28,11 +28,12 @@ TraceResult RayTracer::trace(Ray ray)
 	result.color = Vec3f(0.0f);
 	result.num_rays = 0;
 	result.num_occlusion_rays = 0;
+	result.num_lights = 0;
 	HitInfo& hit = result.hit;
 
 	const float epsilon = p_scene->scene_epsilon;
 
-	const int samples = 50;
+	const int samples = 100;
 
 	HitInfo visualInfo = HitInfo();
 	if (p_scene->trace_visuals(Ray(ray), visualInfo)) {
@@ -48,21 +49,23 @@ TraceResult RayTracer::trace(Ray ray)
 		if (dot(normal, ray.direction) > 0)
 			normal = -normal;
 
-		//result.color = hit.color * fmaxf(dot(-normal, Vec3f(-1.0f,-1.0f,-1.0f).normalized()), 0.0f);
-		//const float sample_factor = 1.0f / samples;
-		//for (int i = 0; i < samples; i++) {
-		//	Vec3f sample_dir = SampleCosineSphere();
-		//	rotate_to_normal(normal, sample_dir);
+		/*
+		result.color = hit.color * fmaxf(dot(-normal, Vec3f(-1.0f,-1.0f,-1.0f).normalized()), 0.0f);
+		const float sample_factor = 1.0f / samples;
+		for (int i = 0; i < samples; i++) {
+			Vec3f sample_dir = SampleCosineSphere();
+			rotate_to_normal(normal, sample_dir);
 
-		//	Ray sample_ray = Ray(hit.position, sample_dir, epsilon, 10000);
-		//	result.color += hit.color * sample(sample_ray, 2) * sample_factor;
-		//}
+			Ray sample_ray = Ray(hit.position, sample_dir, epsilon, 10000);
+			result.color += hit.color * sample(sample_ray, 2) * sample_factor;
+		}
+		*/
 
 		result.color += SampleLights(hit.position, normal, hit.color, light_count);
 		result.num_occlusion_rays += light_count;
 
 		//// Add ambient light
-		result.color += hit.color * p_scene->GetAmbient(hit.position);
+		//result.color += hit.color * p_scene->GetAmbient(hit.position);
 
 		result.color = min(result.color, Vec3f(1.0f));
 		 

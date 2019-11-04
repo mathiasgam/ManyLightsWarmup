@@ -9,10 +9,10 @@ inline float random(float min, float max) {
 	return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (max - min)));
 }
 
-inline Vec3f random(Vec3f min, Vec3f max) {
-	float x = random(min[0], max[0]);
-	float y = random(min[1], max[1]);
-	float z = random(min[2], max[2]);
+inline Vec3f random(Vec3f from, Vec3f to) {
+	float x = random(from[0], to[0]);
+	float y = random(from[1], to[1]);
+	float z = random(from[2], to[2]);
 	return Vec3f(x, y, z);
 }
 
