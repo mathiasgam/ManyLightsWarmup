@@ -12,24 +12,15 @@ workspace "ManyLights"
       optimize "On"
 
       filter "action:vs*"
-  		defines "/arch:AVX2"
-  		defines "/Ox"
-  		defines "/Oi"
-  		defines "/Ot"
-  		defines "/GL"
-  		defines "/LTCG:incremental"
+      	buildoptions { "/arch:AVX2", "/Ox", "/Oi", "/Ot", "/GL", "/LTCG:incremental" }
+  		--defines "/arch:AVX2"
 
     filter "configurations:Dist"
       defines { "NDEBUG" }
       optimize "On"
 
       filter "action:vs*"
-  		defines "/arch:AVX2"
-  		defines "/Ox"
-  		defines "/Oi"
-  		defines "/Ot"
-  		defines "/GL"
-  		defines "/LTCG:incremental"
+  		buildoptions { "/arch:AVX2", "/Ox", "/Oi", "/Ot", "/GL", "/LTCG:incremental" }
 
   	filter "configurations:Debug"
   		defines "DEBUG"
