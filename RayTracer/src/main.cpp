@@ -56,25 +56,26 @@ void prepareScene(Scene* scene) {
 
 	// add some models to the scene
 	//scene->AddMesh("../models/san-miguel_tri.obj", color(196, 160, 106), Vec3f(0, 0, 0));
-	scene->AddMesh("../models/buddha.obj", color(122, 10, 2), Vec3f(-1.0f, 0.3f, 0.0f));
-	scene->AddMesh("../models/dragon.obj", color(50, 122, 2), Vec3f(0.0f, 0.3f, 0.0f));
-	scene->AddMesh("../models/bunny.obj", color(122, 75, 39), Vec3f(1.0f, -0.3f, 1.0f));
-	scene->AddPlane(Vec3f(0, 0, 0), color(92, 85, 74), Vec3f(0, 1, 0));
+	//scene->AddMesh("../models/buddha.obj", color(122, 10, 2), Vec3f(-1.0f, 0.3f, 0.0f));
+	//scene->AddMesh("../models/dragon.obj", color(50, 122, 2), Vec3f(0.0f, -0.2f, 0.0f));
+	//scene->AddMesh("../models/bunny.obj", color(122, 75, 39), Vec3f(1.0f, -0.3f, 1.0f));
+	scene->AddMesh("../models/TestScene.obj", color(90, 90, 90), Vec3f(0.0f));
+	//scene->AddPlane(Vec3f(0, 0, 0), color(92, 85, 74), Vec3f(0, 1, 0));
 
 	//scene->AddLight(Vec3f(20, 2, 2), Vec3f(0, 0, 50));
 	const Vec3f light_color = color(255, 241, 224);
 
 	scene->SetAmbient(light_color * 0.2f);
 
-	const float intensity = 100.0f;
+	const float intensity = 500.0f;
 	//scene->AddLight(Vec3f(16.0f, 5.0f, 6.0f), light_color * 100);
 	//scene->AddLight(Vec3f(15, 10, 0), light_color * 100);
 	//scene->AddLight(Vec3f(24, 10, 0), light_color * 100);
 
-	const int num_lights = 2000;
+	const int num_lights = 1000;
 
 	Vec3f center = Vec3f(0.0f, 3.0f, 0.0f);
-	Vec3f dim = Vec3f(5.0f, 1.0f, 5.0f);
+	Vec3f dim = Vec3f(20.0f, 1.0f, 20.0f);
 	for (int i = 0; i < 10; i++) {
 		Vec3f pos = random(center - dim, center + dim);
 		Vec3f color = Vec3f(random(0.1f, 1.0f), random(0.1f, 1.0f), random(0.1f, 1.0f)).normalized();
@@ -113,8 +114,9 @@ int main() {
 	// create the camera
 	PinHoleCamera cam = PinHoleCamera();
 	//cam.SetPosition(Vec3f(-2.5f, 1.0f, 0.0f));
-	cam.SetPosition(Vec3f(-2.0f, 2.0f, 3.0f));
+	//cam.SetPosition(Vec3f(-2.0f, 2.0f, 3.0f));
 	//cam.SetPosition(Vec3f(-20.0f, 10.0f, 10.0f));
+	cam.SetPosition(Vec3f(-8.0f, 1.0f, 10.0f));
 	cam.LookAt(Vec3f(0.0f, 0.5f, 0.5f));
 
 	// scene added as pointer, for easier access over multiple threads

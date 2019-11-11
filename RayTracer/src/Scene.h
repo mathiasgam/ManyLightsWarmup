@@ -29,8 +29,8 @@ private:
 
 	LBVHStructure BVHMesh;
 	LBVHStructure BVHVisuals;
-	BULightTree BVHLights;
-	//LightTree BVHLights;
+	//BULightTree BVHLights;
+	LightTree BVHLights;
 
 	Vec3f ambient = Vec3f(0.1f, 0.1f, 0.1f);
 

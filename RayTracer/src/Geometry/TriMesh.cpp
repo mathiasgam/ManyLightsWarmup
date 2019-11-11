@@ -12,7 +12,7 @@ bool intersect_triangle(const Ray& ray,
 	// Find vectors for edges sharing v0
 	Vec3f e0 = v1 - v0;
 	Vec3f e1 = v0 - v2;
-	
+
 	// Find face normal
 	n = cross(e0, e1);
 
@@ -22,7 +22,7 @@ bool intersect_triangle(const Ray& ray,
 		return false;
 	q = 1.0f / q;
 	Vec3f o_to_v0 = v0 - ray.center;
-	t = dot(o_to_v0, n)*q;
+	t = dot(o_to_v0, n) * q;
 
 	// Check distance to intersection
 	if (t < ray.t_min || t > ray.t_max)
@@ -33,12 +33,12 @@ bool intersect_triangle(const Ray& ray,
 	v = dot(n_tmp, e1) * q;
 	if (v < 0.0f)
 		return false;
-	w = dot(n_tmp, e0)*q;
+	w = dot(n_tmp, e0) * q;
 	if (w < 0.0f || v + w > 1.0f)
 		return false;
 
 	// Let the counterclockwise wound side face forward
-	if (q>0)
+	if (q > 0)
 		n = -n;
 	return true;
 }
@@ -53,7 +53,7 @@ TriMesh::~TriMesh()
 }
 
 
-bool TriMesh::intersect(Ray & ray, HitInfo & hit, unsigned int i) const
+bool TriMesh::intersect(Ray& ray, HitInfo& hit, unsigned int i) const
 {
 	const Vec3ui face = geometry.face(i);
 	Vec3f normal;
@@ -77,6 +77,13 @@ AABB TriMesh::get_bbox() const
 	for (int i = 0; i < N; i++) {
 		bbox.add_point(geometry.vertex(i));
 	}
+	Vec3f diagonal = bbox.p_max - bbox.p_min;
+	for (int i = 0; i < 3; i++) {
+		if (diagonal[i] <= 0.001f) {
+			bbox.p_max[i] += 0.001f;
+			bbox.p_min[i] -= 0.001f;
+		}
+	}
 	return bbox;
 }
 
@@ -87,6 +94,13 @@ AABB TriMesh::get_bbox(unsigned int i) const
 	bbox.add_point(geometry.vertex(face[0]));
 	bbox.add_point(geometry.vertex(face[1]));
 	bbox.add_point(geometry.vertex(face[2]));
+	Vec3f diagonal = bbox.p_max - bbox.p_min;
+	for (int i = 0; i < 3; i++) {
+		if (diagonal[i] <= 0.001f) {
+			bbox.p_max[i] += 0.001f;
+			bbox.p_min[i] -= 0.001f;
+		}
+	}
 	return bbox;
 }
 
@@ -94,13 +108,13 @@ void TriMesh::normalize()
 {
 	AABB bbox = this->get_bbox();
 	Vec3f size = bbox.size();
-	float max_size = fmaxf(size[0], fmaxf(size[1],size[2]));
+	float max_size = fmaxf(size[0], fmaxf(size[1], size[2]));
 	Vec3f translation = bbox.center();
 	float inverse = 1.0f / max_size;
 	const auto num_vertices = geometry.num_vertices();
 	for (int i = 0; i < num_vertices; i++) {
 		geometry.vertices[i] *= inverse;
-		geometry.vertices[i] -= translation*inverse;
+		geometry.vertices[i] -= translation * inverse;
 	}
 }
 
