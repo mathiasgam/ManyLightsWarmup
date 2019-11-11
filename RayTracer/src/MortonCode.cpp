@@ -33,20 +33,22 @@ bool MortonCode3::operator>(const MortonCode3& other) const
 	return data > other.data;
 }
 
-unsigned int clz(uint64_t code)
+/*
+inline unsigned int clz(uint64_t code)
 {
 	return __lzcnt64(code);
 }
 
-unsigned int clz(uint32_t code)
+inline unsigned int clz(uint32_t code)
 {
 	return __lzcnt(code);
 }
 
-unsigned int clz(uint16_t code)
+inline unsigned int clz(uint16_t code)
 {
 	return __lzcnt16(code);
 }
+*/
 
 uint64_t MortonCode3::SplitBy3(uint64_t x)
 {

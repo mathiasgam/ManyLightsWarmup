@@ -8,6 +8,7 @@
 #include <queue>
 
 #include "Sampling.h"
+#include "KdTree.h"
 
 
 
@@ -32,10 +33,13 @@ void BULightTree::init(std::vector<PointLight*> lights)
 	// set for holding all the lights during construction.
 	//std::set<LightNode*> clusters;
 	std::unordered_set<LightNode*> clusters;
+	
+	KdTree<Vec3f, PointLight*, 3> kdtree = KdTree<Vec3f, PointLight*, 3>();
 
 	// insert all lights in the cluster set.
 	for (PointLight* light : lights) {
 		LightNode* node = new LightNode();
+		kdtree.Insert(light->position, light);
 
 		node->type = NodeType::Leaf;
 		node->bbox = AABB(light->position);
@@ -45,6 +49,8 @@ void BULightTree::init(std::vector<PointLight*> lights)
 
 		clusters.insert(node);
 	}
+
+	kdtree.Build();
 
 	class custom_priority_queue : public std::priority_queue<NodePair, std::vector<NodePair>, CompareDist>
 	{

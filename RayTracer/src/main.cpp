@@ -55,11 +55,11 @@ Vec3f color(unsigned int r, unsigned int g, unsigned int b) {
 void prepareScene(Scene* scene) {
 
 	// add some models to the scene
-	//scene->AddMesh("../models/san-miguel_tri.obj", color(196, 160, 106), Vec3f(0, 0, 0));
+	scene->AddMesh("../models/sponza.obj", color(196, 160, 106), Vec3f(0, 0, 0));
 	//scene->AddMesh("../models/buddha.obj", color(122, 10, 2), Vec3f(-1.0f, 0.3f, 0.0f));
 	//scene->AddMesh("../models/dragon.obj", color(50, 122, 2), Vec3f(0.0f, -0.2f, 0.0f));
 	//scene->AddMesh("../models/bunny.obj", color(122, 75, 39), Vec3f(1.0f, -0.3f, 1.0f));
-	scene->AddMesh("../models/TestScene.obj", color(90, 90, 90), Vec3f(0.0f));
+	//scene->AddMesh("../models/TestScene.obj", color(90, 90, 90), Vec3f(0.0f));
 	//scene->AddPlane(Vec3f(0, 0, 0), color(92, 85, 74), Vec3f(0, 1, 0));
 
 	//scene->AddLight(Vec3f(20, 2, 2), Vec3f(0, 0, 50));
@@ -67,19 +67,19 @@ void prepareScene(Scene* scene) {
 
 	scene->SetAmbient(light_color * 0.2f);
 
-	const float intensity = 500.0f;
+	const float intensity = 100.0f;
 	//scene->AddLight(Vec3f(16.0f, 5.0f, 6.0f), light_color * 100);
 	//scene->AddLight(Vec3f(15, 10, 0), light_color * 100);
 	//scene->AddLight(Vec3f(24, 10, 0), light_color * 100);
 
 	const int num_lights = 1000;
 
-	Vec3f center = Vec3f(0.0f, 3.0f, 0.0f);
-	Vec3f dim = Vec3f(20.0f, 1.0f, 20.0f);
-	for (int i = 0; i < 10; i++) {
+	Vec3f center = Vec3f(0.0f, 5.0f, 0.0f);
+	Vec3f dim = Vec3f(30.0f, 3.0f, 3.0f);
+	for (int i = 0; i < 100; i++) {
 		Vec3f pos = random(center - dim, center + dim);
 		Vec3f color = Vec3f(random(0.1f, 1.0f), random(0.1f, 1.0f), random(0.1f, 1.0f)).normalized();
-		addLightCluster(scene, random(center - dim, center + dim), Vec3f(2.0f), intensity / 10, num_lights / 10);
+		addLightCluster(scene, random(center - dim, center + dim), Vec3f(2.0f), intensity / 100, num_lights / 100);
 	}
 
 	//addLightCluster(scene, Vec3f(0.0f, 1.0f, 0.0f), Vec3f(10.0f,0.5f,10.0f), light_color * intensity, num_lights);
@@ -90,6 +90,24 @@ void prepareScene(Scene* scene) {
 int main() {
 	// set the seed for the standard random function with constant value for comparable results across runs
 	srand(42);
+
+	KdTree<Vec3f, std::string, 3> kdtree = KdTree<Vec3f, std::string, 3>();
+
+
+	//kdtree.Insert(Vec3f(0, 0, 0), "Blue");
+	kdtree.Insert(Vec3f(2, 0, 0), "Red");
+	kdtree.Insert(Vec3f(1, 1, 1), "Green");
+	kdtree.Insert(Vec3f(0, 2, 0), "Red");
+	kdtree.Insert(Vec3f(0, 2, 2), "Red");
+	kdtree.Insert(Vec3f(0.9f, 1.0f, 1.1f), "Red");
+
+	kdtree.Build();
+
+	Vec3f nearestPoint;
+	std::string nearestString;
+	kdtree.Nearest(Vec3f(0, 0, 0), 5.0f, nearestPoint, nearestString);
+
+	std::cout << "Nearest String: " << nearestString << std::endl;
 
 	/*std::vector<Vec3f> points = std::vector<Vec3f>();
 	KdTree<Vec3f, 3> kdtree = KdTree<Vec3f, 3>();
@@ -116,7 +134,8 @@ int main() {
 	//cam.SetPosition(Vec3f(-2.5f, 1.0f, 0.0f));
 	//cam.SetPosition(Vec3f(-2.0f, 2.0f, 3.0f));
 	//cam.SetPosition(Vec3f(-20.0f, 10.0f, 10.0f));
-	cam.SetPosition(Vec3f(-8.0f, 1.0f, 10.0f));
+	//cam.SetPosition(Vec3f(-8.0f, 1.0f, 10.0f));
+	cam.SetPosition(Vec3f(20.0f, 2.1f, 0.0f));
 	cam.LookAt(Vec3f(0.0f, 0.5f, 0.5f));
 
 	// scene added as pointer, for easier access over multiple threads

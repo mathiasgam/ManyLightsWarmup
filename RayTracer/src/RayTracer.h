@@ -34,6 +34,6 @@ public:
 
 private:
 	Vec3f sample(Ray ray, int bounces) const;
-	Vec3f SampleLights(const Vec3f& pos, const Vec3f normal, const Vec3f& material, int& numLights) const;
+	Vec3f SampleLights(const Vec3f& pos, const Vec3f normal, const Vec3f& material, int& numLights, const float threshold) const;
 };
 

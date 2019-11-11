@@ -2,11 +2,11 @@
 #include "Sampling.h"
 #include "Vec3f.h"
 
-Vec3f RayTracer::SampleLights(const Vec3f& pos, const Vec3f normal, const Vec3f& material, int& numLights) const {
+Vec3f RayTracer::SampleLights(const Vec3f& pos, const Vec3f normal, const Vec3f& material, int& numLights, const float threshold) const {
 	Vec3f res = Vec3f(0.0f);
 	const float epsilon = p_scene->scene_epsilon;
 
-	for (PointLight* light : p_scene->GetLights(pos, normal, LightThreshold)) {
+	for (PointLight* light : p_scene->GetLights(pos, normal, threshold)) {
 		Vec3f dir = light->position - pos;
 		float dist = dir.length();
 		dir = dir.normalized();
@@ -33,7 +33,7 @@ TraceResult RayTracer::trace(Ray ray)
 
 	const float epsilon = p_scene->scene_epsilon;
 
-	const int samples = 100;
+	const int samples = 20;
 
 	HitInfo visualInfo = HitInfo();
 	if (p_scene->trace_visuals(Ray(ray), visualInfo)) {
@@ -49,7 +49,7 @@ TraceResult RayTracer::trace(Ray ray)
 		if (dot(normal, ray.direction) > 0)
 			normal = -normal;
 
-		/*
+		
 		result.color = hit.color * fmaxf(dot(-normal, Vec3f(-1.0f,-1.0f,-1.0f).normalized()), 0.0f);
 		const float sample_factor = 1.0f / samples;
 		for (int i = 0; i < samples; i++) {
@@ -59,9 +59,9 @@ TraceResult RayTracer::trace(Ray ray)
 			Ray sample_ray = Ray(hit.position, sample_dir, epsilon, 10000);
 			result.color += hit.color * sample(sample_ray, 2) * sample_factor;
 		}
-		*/
+		
 
-		result.color += SampleLights(hit.position, normal, hit.color, light_count);
+		result.color += SampleLights(hit.position, normal, hit.color, light_count, LightThreshold);
 		result.num_occlusion_rays += light_count;
 
 		//// Add ambient light
@@ -106,7 +106,7 @@ Vec3f RayTracer::sample(Ray ray, int bounces) const
 			res += hit.color * sample(sample_ray, --bounces);
 		}
 
-		res += SampleLights(hit.position, normal, hit.color, light_count);
+		res += SampleLights(hit.position, normal, hit.color, light_count, LightThreshold * 10.0f);
 		//res += hit.color * p_scene->GetAmbient(hit.position);
 		//res = res / (hit.t * hit.t);
 	}
