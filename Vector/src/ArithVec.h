@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <cassert>
+#include <intrin.h>
 
 // Implementation dependant of compiler optimizing removing the forloops.
 
@@ -244,6 +245,24 @@ public:
 		return t;
 	}
 
+	/// Find the axis with the highest element
+	inline unsigned int max_axis() const {
+		unsigned int axis = 0;
+		for (int i = 1; i < K; i++) {
+			axis = data[axis] > data[i] ? axis : i;
+		}
+		return axis;
+	}
+
+	/// Find the axis with the lowest element
+	inline unsigned int min_axis() const {
+		unsigned int axis = 0;
+		for (int i = 1; i < K; i++) {
+			axis = data[axis] < data[i] ? axis : i;
+		}
+		return axis;
+	}
+
 }; // end of member functions
 
 template <class T, class V, unsigned int K>
@@ -341,5 +360,25 @@ inline std::ostream& operator<<(std::ostream&os, const ArithVec<T, V, K>& v)
 	return os;
 }
 
+inline unsigned int clz(uint64_t code)
+{
+	return __lzcnt64(code);
+}
+
+inline unsigned int clz(uint32_t code)
+{
+	return __lzcnt(code);
+}
+
+inline unsigned int clz(uint16_t code)
+{
+	return __lzcnt16(code);
+}
+
+inline int fast_log2(int x) {
+	if (x < 1)
+		return -1;
+	return 8 * sizeof(int) - clz(static_cast<uint32_t>(x)) - 1;
+}
 
 #endif // !ARITH_VEC_H
