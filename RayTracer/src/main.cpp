@@ -93,22 +93,6 @@ int main() {
 
 	KdTree<Vec3f, std::string, 3> kdtree = KdTree<Vec3f, std::string, 3>();
 
-
-	//kdtree.Insert(Vec3f(0, 0, 0), "Blue");
-	kdtree.Insert(Vec3f(2, 0, 0), "Red");
-	kdtree.Insert(Vec3f(1, 1, 1), "Green");
-	kdtree.Insert(Vec3f(0, 2, 0), "Red");
-	kdtree.Insert(Vec3f(0, 2, 2), "Red");
-	kdtree.Insert(Vec3f(0.9f, 1.0f, 1.1f), "Red");
-
-	kdtree.Build();
-
-	Vec3f nearestPoint;
-	std::string nearestString;
-	kdtree.Nearest(Vec3f(0, 0, 0), 5.0f, nearestPoint, nearestString);
-
-	std::cout << "Nearest String: " << nearestString << std::endl;
-
 	/*std::vector<Vec3f> points = std::vector<Vec3f>();
 	KdTree<Vec3f, 3> kdtree = KdTree<Vec3f, 3>();
 
