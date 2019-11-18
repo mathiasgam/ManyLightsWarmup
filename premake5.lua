@@ -1,5 +1,6 @@
 workspace "ManyLights"
 	architecture "x64"
+	cppdialect "c++17"
 
 	configurations {
 		"Debug",

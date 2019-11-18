@@ -49,12 +49,12 @@ public:
 	}
 
 	virtual void init(std::vector<PointLight*> lights);
-	std::vector<PointLight*> GetLights(Vec3f sample_position, Vec3f sample_normal, float threshold) const;
+	std::vector<PointLight*> GetLights(const HitInfo& hit, float threshold) const;
 	virtual std::vector<Line> GetTreeEdges() const;
 
 private:
 
-	void SearchLights(std::vector<PointLight*>& out, LightNode* node, Vec3f pos, Vec3f normal, float threshold) const;
+	void SearchLights(std::vector<PointLight*>& out, LightNode* node, const HitInfo& hit, float threshold) const;
 
 	LightNode* generateHierarchy(std::vector<BuildPrimitive>& sortedPrimitives, int first, int last);
 	int findSplit(std::vector<BuildPrimitive>& sortedPrimitives, int first, int last);

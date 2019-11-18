@@ -10,7 +10,7 @@
 #include "Sampling.h"
 #include "KdTree.h"
 
-
+#define RANDOM_THRESHOLD true
 
 BULightTree::BULightTree() : ReprecentativeLights(0)
 {
@@ -142,10 +142,10 @@ void BULightTree::init(std::vector<PointLight*> lights)
 	root = *clusters.begin();
 }
 
-std::vector<PointLight*> BULightTree::GetLights(Vec3f position, Vec3f normal, float threshold) const
+std::vector<PointLight*> BULightTree::GetLights(const HitInfo& hit, float threshold) const
 {
 	std::vector<PointLight*> lights = std::vector<PointLight*>();
-	SearchLights(lights, root, position, normal, threshold);
+	SearchLights(lights, root, hit, threshold);
 
 	return lights;
 }
@@ -157,47 +157,64 @@ std::vector<Line> BULightTree::GetTreeEdges() const
 	return lines;
 }
 
-void BULightTree::SearchLights(std::vector<PointLight*>& out, LightNode* node, Vec3f pos, Vec3f normal, float threshold) const
+void BULightTree::SearchLights(std::vector<PointLight*>& out, LightNode* node, const HitInfo& hit, float threshold) const
 {
 	if (node->type == NodeType::Leaf) {
 		out.push_back(node->reprecentative);
 		return;
 	}
-
+	/*
 	// Test if the bounding box is behind the surface.
-	Vec3f t1 = (node->bbox.p_min - pos) / normal;
-	Vec3f t2 = (node->bbox.p_max - pos) / normal;
+	Vec3f t1 = (node->bbox.p_min - hit.position) / hit.normal;
+	Vec3f t2 = (node->bbox.p_max - hit.position) / hit.normal;
 	if (max(t1, t2).max_componont() < 0.0f)
 		return;
+	*/
 
+	const float cos_theta_bound = CosineBound(hit.position, hit.normal, node->bbox);
+	if (cos_theta_bound < 0.0f) {
+		return;
+	}
 
-	const float dist = (pos - node->reprecentative->position).length();
+	if (cos_theta_bound > 1.0f) {
+		std::cout << "COS_THETA_BOUND: " << cos_theta_bound << ", FAILED!!!" << std::endl;
+	}
+		
+
+	Vec3f dir = hit.position - node->reprecentative->position;
+	const float dist = dir.length();
+	dir /= dist;
 	const float radius = (node->bbox.p_max - node->bbox.p_min).length() / 2.0f;
 
 	const float min_dist = dist - radius;
 	
 	if (min_dist <= 0) {
-		SearchLights(out, node->ChildA, pos, normal, threshold);
-		SearchLights(out, node->ChildB, pos, normal, threshold);
+		SearchLights(out, node->ChildA, hit, threshold);
+		SearchLights(out, node->ChildB, hit, threshold);
 		return;
 	}
 
 	// Geometric term
 	//float G = 1.0f / (dist * dist);
 
-	const Vec3f intensity = node->reprecentative->color;
+
+	const Vec3f intensity = node->reprecentative->color * hit.p_material->diffuse * cos_theta_bound;
 	const Vec3f rep = intensity / (dist * dist);
 	const Vec3f worst = intensity / (min_dist * min_dist);
 
 	const Vec3f error = abs(rep - worst);
 
-	//std::cout << area << std::endl;
-	if (error.element_sum() < threshold) {
+	// add a random value to the threshold to remove artefacts
+#if RANDOM_THRESHOLD
+	if (error.element_sum() < threshold * random(1.0f, 1.5f)) {
+#else
+	if (error.element_sum() < threshold){
+#endif // RANDOM_THRESHOLD
 		out.push_back(node->reprecentative);
 	}
 	else {
-		SearchLights(out, node->ChildA, pos, normal, threshold);
-		SearchLights(out, node->ChildB, pos, normal, threshold);
+		SearchLights(out, node->ChildA, hit, threshold);
+		SearchLights(out, node->ChildB, hit, threshold);
 	}
 }
 

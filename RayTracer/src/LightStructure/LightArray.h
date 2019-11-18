@@ -15,7 +15,7 @@ public:
 	~LightArray(){}
 
 	virtual void init(std::vector<PointLight*> lights);
-	virtual std::vector<PointLight*> GetLights(Vec3f position, Vec3f normal, float threshold) const;
+	virtual std::vector<PointLight*> GetLights(const HitInfo& hit, float threshold) const;
 
 private:
 

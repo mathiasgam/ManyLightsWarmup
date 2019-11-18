@@ -45,10 +45,10 @@ void LightTree::init(std::vector<PointLight*> lights)
 	CalculateReprecentativeLights(root);
 }
 
-std::vector<PointLight*> LightTree::GetLights(Vec3f sample_position, Vec3f sample_normal, float threshold) const
+std::vector<PointLight*> LightTree::GetLights(const HitInfo& hit, float threshold) const
 {
 	std::vector<PointLight*> lights = std::vector<PointLight*>();
-	SearchLights(lights, root, sample_position, sample_normal, threshold);
+	SearchLights(lights, root, hit, threshold);
 
 	return lights;
 }
@@ -60,7 +60,7 @@ std::vector<Line> LightTree::GetTreeEdges() const
 	return lines;
 }
 
-void LightTree::SearchLights(std::vector<PointLight*>& out, LightNode* node, Vec3f pos, Vec3f normal, float threshold) const
+void LightTree::SearchLights(std::vector<PointLight*>& out, LightNode* node, const HitInfo& hit, float threshold) const
 {
 	if (node->type == NodeType::Leaf) {
 		out.push_back(node->reprecentative);
@@ -68,27 +68,27 @@ void LightTree::SearchLights(std::vector<PointLight*>& out, LightNode* node, Vec
 	}
 
 	// Test if the bounding box is behind the surface.
-	Vec3f t1 = (node->bbox.p_min - pos) / normal;
-	Vec3f t2 = (node->bbox.p_max - pos) / normal;
+	Vec3f t1 = (node->bbox.p_min - hit.position) / hit.normal;
+	Vec3f t2 = (node->bbox.p_max - hit.position) / hit.normal;
 	if (max(t1, t2).max_componont() < 0.0f)
 		return;
 
 
-	const float dist = (pos - node->reprecentative->position).length();
+	const float dist = (hit.position - node->reprecentative->position).length();
 	const float radius = (node->bbox.p_max - node->bbox.p_min).length() / 2.0f;
 
 	const float min_dist = dist - radius;
 
 	if (min_dist <= 0) {
-		SearchLights(out, node->ChildA, pos, normal, threshold);
-		SearchLights(out, node->ChildB, pos, normal, threshold);
+		SearchLights(out, node->ChildA, hit, threshold);
+		SearchLights(out, node->ChildB, hit, threshold);
 		return;
 	}
 
 	// Geometric term
 	//float G = 1.0f / (dist * dist);
 
-	const Vec3f intensity = node->reprecentative->color;
+	const Vec3f intensity = node->reprecentative->color * hit.p_material->diffuse;
 	const Vec3f rep = intensity / (dist * dist);
 	const Vec3f worst = intensity / (min_dist * min_dist);
 
@@ -99,8 +99,8 @@ void LightTree::SearchLights(std::vector<PointLight*>& out, LightNode* node, Vec
 		out.push_back(node->reprecentative);
 	}
 	else {
-		SearchLights(out, node->ChildA, pos, normal, threshold);
-		SearchLights(out, node->ChildB, pos, normal, threshold);
+		SearchLights(out, node->ChildA, hit, threshold);
+		SearchLights(out, node->ChildB, hit, threshold);
 	}
 }
 

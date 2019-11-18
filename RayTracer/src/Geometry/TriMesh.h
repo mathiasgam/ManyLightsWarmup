@@ -14,8 +14,8 @@ protected:
 
 public:
 	IndexedFaceSet geometry;
-	IndexedFaceSet normals;
-
+	//IndexedFaceSet normals;
+	std::vector<unsigned int> material_indecies;
 
 	TriMesh();
 	~TriMesh();
@@ -33,5 +33,9 @@ public:
 
 	void normalize();
 	void translate(const Vec3f& diff);
+
+	void addVertex(const Vec3f& vertex);
+	//void addNormal(const Vec3f& normal);
+	void addFace(const Vec3ui& vertices, const Vec3ui& normals, const unsigned int material_index);
 };
 

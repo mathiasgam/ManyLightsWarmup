@@ -19,7 +19,7 @@ class RayTracer
 {
 protected:
 	const Scene* p_scene = nullptr;
-	float LightThreshold = 0.01f;
+	float LightThreshold = 0.02f;
 
 public:
 	RayTracer(Scene* scene) : p_scene(scene) {}
@@ -34,6 +34,6 @@ public:
 
 private:
 	Vec3f sample(Ray ray, int bounces) const;
-	Vec3f SampleLights(const Vec3f& pos, const Vec3f normal, const Vec3f& material, int& numLights, const float threshold) const;
+	Vec3f SampleLights(const HitInfo& hit, const Vec3f& material, int& numLights, const float threshold) const;
 };
 

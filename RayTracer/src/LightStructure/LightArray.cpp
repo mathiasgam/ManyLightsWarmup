@@ -1,4 +1,5 @@
 #include "LightArray.h"
+#include "HitInfo.h"
 
 void LightArray::init(std::vector<PointLight*> _lights)
 {
@@ -7,7 +8,7 @@ void LightArray::init(std::vector<PointLight*> _lights)
 		lights.push_back(l);
 }
 
-std::vector<PointLight*> LightArray::GetLights(Vec3f position, Vec3f normal, float threshold) const
+std::vector<PointLight*> LightArray::GetLights(const HitInfo& hit, float threshold) const
 {
 	return lights;
 }

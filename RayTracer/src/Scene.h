@@ -2,11 +2,14 @@
 
 #include <vector>
 #include <string>
+#include <string_view>
+#include <unordered_map>
 
 #include "Geometry/TriMesh.h"
 #include "Geometry/Plane.h"
 #include "PointLight.h"
 #include "OBJModel.h"
+#include "Material.h"
 
 #include "Structure/Structure.h"
 #include "Structure/LBVHStructure.h"
@@ -19,6 +22,9 @@
 class Scene
 {
 private:
+
+	std::vector<const Material*> materials;
+
 	std::vector<OBJModel*> models;
 	std::vector<const Geometry*> meshes;
 	std::vector<const Plane*> planes;
@@ -39,19 +45,30 @@ public: /// Public variables
 	const float scene_epsilon = 0.0001f;
 
 public: /// Public Functions
-	Scene() : meshes(0), planes(0), lights(0), visuals(0), BVHMesh(), BVHVisuals(), BVHLights() {}
+	Scene() : materials(0), meshes(0), planes(0), lights(0), visuals(0), BVHMesh(), BVHVisuals(), BVHLights() {
+		Material* default_material = new Material();
+		materials.push_back(default_material);
+	}
+
 	~Scene();
 
-	void AddMesh(const char* filename, const Vec3f color, Vec3f transform);
+	void AddMesh(const TriMesh* trimesh, const Vec3f color, Vec3f transform);
 	void AddPoint(const Vec3f position, const float radius);
 	void AddLine(const Vec3f p1, const Vec3f p2, const float radius, Vec3f color);
 	void AddPlane(const Vec3f position, const Vec3f color, const Vec3f normal);
 	void AddLight(const Vec3f position, const Vec3f color);
 
-	unsigned int GetNumModels() { return models.size(); }
-	unsigned int GetNumMeshes() { return meshes.size(); }
-	unsigned int GetNumLights() { return lights.size(); }
-	unsigned int GetNumPlanes() { return planes.size(); }
+	void LoadMTL(const std::string_view filename, const std::string_view basepath);
+	void LoadOBJFile(const std::string_view filename, const std::string_view basepath);
+
+	void LoadScene(const std::string_view filename);
+
+	unsigned int GetNumModels() const { return models.size(); }
+	unsigned int GetNumMeshes() const { return meshes.size(); }
+	unsigned int GetNumLights() const { return lights.size(); }
+	unsigned int GetNumPlanes() const { return planes.size(); }
+
+	const Material* GetMaterial(unsigned int index) const { return materials[index]; }
 
 	void prepare();
 
@@ -59,7 +76,7 @@ public: /// Public Functions
 	bool any_hit(Ray& ray) const { return BVHMesh.any_hit(ray); }
 	bool trace_visuals(Ray& ray, HitInfo& hit) const { return BVHVisuals.closest_hit(ray, hit); }
 
-	std::vector<PointLight*> GetLights(Vec3f position, Vec3f normal, float threshold) const { return BVHLights.GetLights(position, normal, threshold); }
+	std::vector<PointLight*> GetLights(const HitInfo& hit, float threshold) const { return BVHLights.GetLights(hit, threshold); }
 	void SetAmbient(const Vec3f& color);
 	Vec3f GetAmbient(const Vec3f& position) const;
 	Vec3f GetBackground(const Vec3f& direction) const;

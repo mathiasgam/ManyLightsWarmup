@@ -61,11 +61,11 @@ public:
 	~BULightTree();
 
 	virtual void init(std::vector<PointLight*> lights);
-	virtual std::vector<PointLight*> GetLights(Vec3f position, Vec3f normal, float threshold) const;
+	virtual std::vector<PointLight*> GetLights(const HitInfo& hit, float threshold) const;
 	virtual std::vector<Line> GetTreeEdges() const;
 
 private:
-	void SearchLights(std::vector<PointLight*>& out, LightNode* node, Vec3f pos, Vec3f normal, float threshold) const;
+	void SearchLights(std::vector<PointLight*>& out, LightNode* node, const HitInfo& hit, float threshold) const;
 
 	float distance(const PointLight* p1, const PointLight* p2);
 	PointLight* MergeLights(PointLight* A, PointLight* B);

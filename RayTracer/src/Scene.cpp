@@ -1,5 +1,8 @@
 #include "Scene.h"
 
+#include <iostream>
+#include <fstream>
+
 #include "OBJModel.h"
 #include "Geometry/Point.h"
 
@@ -10,15 +13,14 @@ Scene::~Scene()
 
 	for (PointLight* light : lights)
 		delete light;
+
+	for (const Material* mat : materials)
+		delete mat;
 }
 
-void Scene::AddMesh(const char* filename, const Vec3f color, Vec3f transform)
+void Scene::AddMesh(const TriMesh* trimesh, const Vec3f color, Vec3f transform)
 {
-	OBJModel* model = new OBJModel(filename, color);
-	models.push_back(model);
-	//model->meshes[0].normalize();
-	model->meshes[0].translate(transform);
-	meshes.push_back(&model->meshes[0]);
+	std::cerr << "TriMesh Direct Loading not supported!" << std::endl;
 }
 
 void Scene::AddPoint(const Vec3f position, const float radius)
@@ -45,6 +47,216 @@ void Scene::AddLight(const Vec3f position, const Vec3f color)
 	lights.push_back(light);
 }
 
+void Scene::LoadMTL(const std::string_view filename, const std::string_view basepath)
+{
+	std::string fullPath = basepath.data();
+	fullPath += filename.data();
+	std::ifstream file(fullPath);
+	if (!file) {
+		std::cerr << "Could not open file: " << filename << "!";
+	}
+
+	Material* p_current_material = nullptr;
+
+	std::string buf;
+	while (file >> buf) {
+		switch (buf[0])
+		{
+		case 'n':
+			if (buf == "newmtl") {
+				// get name of the new material
+				std::string name;
+				file >> name;
+
+				// push a new material to the vector
+				p_current_material = new Material();
+				p_current_material->name = name;
+				materials.push_back(p_current_material);
+			}
+			else {
+				file.ignore(1024, '\n');
+			}
+			break;
+		case 'K':
+			if (buf == "Ka") {
+				float r, g, b;
+				file >> r >> g >> b;
+				p_current_material->ambient = Vec3f(r, g, b);
+			}
+			else if (buf == "Kd") {
+				float r, g, b;
+				file >> r >> g >> b;
+				p_current_material->diffuse = Vec3f(r, g, b);
+			}
+			else if (buf == "Ks") {
+				float r, g, b;
+				file >> r >> g >> b;
+				p_current_material->specular = Vec3f(r, g, b);
+			}
+			else if (buf == "Ke") {
+				float r, g, b;
+				file >> r >> g >> b;
+				p_current_material->emissive = Vec3f(r, g, b);
+			}
+			else {
+				file.ignore(1024, '\n');
+			}
+			break;
+		case 'N':
+			if (buf == "Ns") {
+				float exponent;
+				file >> exponent;
+				p_current_material->shininess = exponent;
+			}
+			else if (buf == "Ni") {
+				float ior;
+				file >> ior;
+				p_current_material->ior = ior;
+			}
+			else {
+				file.ignore(1024, '\n');
+			}
+			break;
+		case 'd':
+			if (buf == "d") {
+				float d;
+				file >> d;
+				p_current_material->transmission = Vec3f(d);
+			}
+			else {
+				file.ignore(1024, '\n');
+			}
+			break;
+		case 'T':
+			if (buf == "Tr") {
+				float d;
+				file >> d;
+				p_current_material->transmission = Vec3f(1.0f - d);
+			}
+			else {
+				file.ignore(1024, '\n');
+			}
+			break;
+		default:
+			file.ignore(1024, '\n');
+			break;
+		}
+	}
+	std::cout << "Loaded file: " << filename << std::endl;
+}
+
+void Scene::LoadOBJFile(const std::string_view filename, const std::string_view basepath)
+{
+	std::string full_path = basepath.data();
+	full_path += filename.data();
+	std::ifstream file(full_path);
+	if (!file) {
+		std::cerr << "Could not open file: " << filename << "!";
+	}
+
+	TriMesh* CurrentMesh = nullptr;
+	unsigned int current_material = 0;
+
+	std::string buf;
+	while (file >> buf) {
+		switch (buf[0])
+		{
+		case 'v':
+			if (buf == "v") {
+				float x, y, z;
+				file >> x >> y >> z;
+				CurrentMesh->geometry.addVertex(Vec3f(x, y, z));
+			}
+			else {
+				file.ignore(1024, '\n');
+			}
+			break;
+		case 'f':
+			if (buf == "f") {
+				unsigned int f0, f1, f2;
+				file >> f0 >> f1 >> f2;
+				CurrentMesh->geometry.addFace(Vec3ui(f0 - 1, f1 - 1, f2 - 1));
+				CurrentMesh->material_indecies.push_back(current_material);
+			}
+			else {
+				file.ignore(1024, '\n');
+			}
+			break;
+		case 'u':
+			if (buf == "usemtl") {
+				std::string name;
+				file >> name;
+				bool found = false;
+				for (int i = 0; i < materials.size(); i++) {
+					if (materials[i]->name == name) {
+						current_material = i;
+						found = true;
+					}
+				}
+				if (!found) {
+					std::cerr << "Failed to find material with name: " << name << std::endl;
+					current_material = 0;
+				}
+			}
+			file.ignore(1024, '\n');
+			break;
+		case 'm':
+			if (buf == "mtllib") {
+				std::string libname;
+				file >> libname;
+				std::cout << "Loading Material: " << libname << std::endl;
+				LoadMTL(libname, basepath);
+			}
+			break;
+		case 'o':
+			if (buf == "o") {
+				std::string name;
+				file >> name;
+				std::cout << "Creating new mesh: " << name << std::endl;
+				CurrentMesh = new TriMesh();
+				meshes.push_back(CurrentMesh);
+			}
+		default:
+			file.ignore(1024, '\n');
+			break;
+		}
+	}
+	std::cout << "Loaded file: " << filename << std::endl;
+}
+
+void Scene::LoadScene(const std::string_view filename)
+{
+	std::ifstream file(filename.data());
+	if (!file) {
+		std::cerr << "Could not open file: " << filename << "!";
+	}
+
+	TriMesh* CurrentMesh = new TriMesh();
+	unsigned int current_material = 0;
+	meshes.push_back(CurrentMesh);
+
+	std::string buf;
+	while (file >> buf) {
+		switch (buf[0])
+		{
+		case 'v':
+			if (buf == "v") {
+				float x, y, z;
+				file >> x >> y >> z;
+				CurrentMesh->geometry.addVertex(Vec3f(x, y, z));
+			}
+			else {
+				file.ignore(1024, '\n');
+			}
+			break;
+
+		default:
+			file.ignore(1024, '\n');
+			break;
+		}
+	}
+}
+
 void Scene::prepare()
 {
 	std::cout << "Preparing scene:\n";
@@ -64,7 +276,7 @@ void Scene::prepare()
 		AddLine(line.p1, line.p2, 0.01f, line.color);
 		edges++;
 		sum_length += (line.p1 - line.p2).length();
-	}	
+	}
 
 	std::cout << "num edges: " << edges << std::endl;
 	std::cout << "avg edge length: " << sum_length / edges << std::endl;

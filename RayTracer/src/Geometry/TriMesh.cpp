@@ -60,10 +60,13 @@ bool TriMesh::intersect(Ray& ray, HitInfo& hit, unsigned int i) const
 	float t, v, w;
 	if (intersect_triangle(ray, geometry.vertex(face[0]), geometry.vertex(face[1]), geometry.vertex(face[2]), normal, t, v, w)) {
 		if (t < hit.t) {
-			hit.normal = normal;
+			if (dot(normal, ray.direction) > 0)
+				normal = -normal;
+			hit.normal = normal.normalized();
+			hit.incomming = ray.direction;
 			hit.t = t;
 			hit.position = ray.center + ray.direction * t;
-			hit.color = Vec3f(0.4f, 0.8f, 0.2f);
+			hit.material_index = material_indecies[i];
 			return true;
 		}
 	}
@@ -124,4 +127,23 @@ void TriMesh::translate(const Vec3f& diff)
 	for (int i = 0; i < num_vertices; i++) {
 		geometry.vertices[i] += diff;
 	}
+}
+
+void TriMesh::addVertex(const Vec3f& vertex)
+{
+	geometry.addVertex(vertex);
+}
+
+/*
+void TriMesh::addNormal(const Vec3f& normal)
+{
+	normals.addVertex(normal);
+}
+*/
+
+void TriMesh::addFace(const Vec3ui& _vertices, const Vec3ui& _normals, const unsigned int material_index)
+{
+	geometry.addFace(_vertices);
+	//normals.addFace(_normals);
+	material_indecies.push_back(material_index);
 }

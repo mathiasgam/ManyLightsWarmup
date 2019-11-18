@@ -38,5 +38,17 @@ inline std::ostream& operator<<(std::ostream&os, const AABB& bbox)
 	return os << "[ " << bbox.p_min << "," << bbox.p_max << " ]";
 }
 
+inline float CosineBound(const Vec3f& position, const Vec3f& normal, const AABB& bbox)
+{
+	assert(normal.length() == 1.0f);
+	Vec3f t1 = (bbox.p_max - position);
+	Vec3f t2 = (bbox.p_min - position);
 
+	Vec3f z = max(t1 * normal, t2 * normal);
+	Vec3f xy = min(t1 * (1.0f - normal), t2 * (1.0f - normal));
+
+	return dot(normal, (z+xy).normalized());
+
+	
+}
 
