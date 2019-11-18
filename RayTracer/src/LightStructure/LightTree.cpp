@@ -39,7 +39,7 @@ void LightTree::init(std::vector<PointLight*> lights)
 
 	std::cout << "Building BVH structure\n";
 	// recursively construct the binary search tree
-	root = generateHierarchy(primitives, 0, primitives.size() - 1);
+	root = generateHierarchy(primitives, 0, static_cast<int>(primitives.size()) - 1);
 
 	assert(root != nullptr);
 	CalculateReprecentativeLights(root);
@@ -113,7 +113,8 @@ LightTree::LightNode* LightTree::generateHierarchy(std::vector<BuildPrimitive>& 
 		node->ChildA = nullptr;
 		node->ChildB = nullptr;
 		node->reprecentative = sortedPrimitives[first].light;
-		assert(node != nullptr, "created node is nullptr");
+		// created node is nullptr
+		assert(node != nullptr);
 		return node;
 	}
 
@@ -124,11 +125,12 @@ LightTree::LightNode* LightTree::generateHierarchy(std::vector<BuildPrimitive>& 
 	node->ChildA = generateHierarchy(sortedPrimitives, first, split);
 	node->ChildB = generateHierarchy(sortedPrimitives, split + 1, last);
 
-	node->reprecentative == nullptr;
+	node->reprecentative = nullptr;
 
-	assert(node->ChildA != nullptr, "created node is nullptr");
-	assert(node->ChildB != nullptr, "created node is nullptr");
-	assert(node != nullptr, "created node is nullptr");
+	// created node is nullptr
+	assert(node->ChildA != nullptr);
+	assert(node->ChildB != nullptr);
+	assert(node != nullptr);
 
 	return node;
 }
@@ -144,7 +146,7 @@ int LightTree::findSplit(std::vector<BuildPrimitive>& sortedPrimitives, int firs
 	// Calculate the number of highest bits that are the same
 	// for all objects, using the count-leading-zeros intrinsic.
 
-	int commonPrefix = clz(firstCode.data ^ lastCode.data);
+	int commonPrefix = static_cast<int>(clz(firstCode.data ^ lastCode.data));
 	//int commonPrefix = __clz(firstCode ^ lastCode);
 
 	// Use binary search to find where the next bit differs.
@@ -162,7 +164,7 @@ int LightTree::findSplit(std::vector<BuildPrimitive>& sortedPrimitives, int firs
 		if (newSplit < last)
 		{
 			MortonCode3 splitCode = sortedPrimitives[newSplit].code;
-			int splitPrefix = clz(firstCode.data ^ splitCode.data);
+			int splitPrefix = static_cast<int>(clz(firstCode.data ^ splitCode.data));
 			if (splitPrefix > commonPrefix)
 				split = newSplit; // accept proposal
 		}
@@ -173,7 +175,7 @@ int LightTree::findSplit(std::vector<BuildPrimitive>& sortedPrimitives, int firs
 
 void LightTree::CalculateReprecentativeLights(LightNode* node)
 {
-	assert(node != nullptr, "Node need to be initialized");
+	assert(node != nullptr); // Node need to be initialized
 	//std::cout << "Nodetype: " << node->type << "\n";
 	if (node->type == NodeType::Leaf) {
 		Vec3f pos = node->reprecentative->position;
@@ -189,7 +191,8 @@ void LightTree::CalculateReprecentativeLights(LightNode* node)
 		node->bbox = AABB(node->ChildA->bbox, node->ChildB->bbox);
 		return;
 	}
-	assert(false, "node type not recognized");
+	// node type not recognized
+	assert(false);
 }
 
 PointLight* LightTree::MergeLights(PointLight* A, PointLight* B)

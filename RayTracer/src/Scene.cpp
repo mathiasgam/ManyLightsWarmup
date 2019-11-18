@@ -270,6 +270,7 @@ void Scene::prepare()
 		AddPoint(light->position, 0.05f);
 	}
 
+#if USE_LIGHT_TREE
 	float sum_length = 0;
 	unsigned int edges = 0;
 	for (Line& line : BVHLights.GetTreeEdges()) {
@@ -280,6 +281,7 @@ void Scene::prepare()
 
 	std::cout << "num edges: " << edges << std::endl;
 	std::cout << "avg edge length: " << sum_length / edges << std::endl;
+#endif
 
 	BVHMesh.init(meshes, planes);
 	std::vector<const Plane*> tmp = std::vector<const Plane*>();

@@ -31,7 +31,7 @@ ArraySphereStructure::~ArraySphereStructure()
 bool ArraySphereStructure::trace(Ray& ray, HitInfo& hit)
 {
 	bool hasHit = false;
-	const int size = r.size();
+	const int size = static_cast<int>(r.size());
 	for (int i = 0; i < size; i++) {
 		Sphere s = Sphere(Vec3f(cx[i], cy[i], cz[i]), r[i]);
 		if (s.intersect(ray, hit,0)) {

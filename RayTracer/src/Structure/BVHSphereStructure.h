@@ -56,7 +56,7 @@ private:
 	bool traceBVHNode(Ray& ray, HitInfo& hit, BVHNode* node);
 	bool tracePrimitive(Ray& ray, HitInfo& hit, int index);
 
-	BVHNode* build(std::vector<Primitive>& primitives, int left, int right);
+	BVHNode* build(std::vector<Primitive>& primitives, unsigned int left, unsigned int right);
 
 	void printTree(BVHNode* p_node, std::string prefix);
 

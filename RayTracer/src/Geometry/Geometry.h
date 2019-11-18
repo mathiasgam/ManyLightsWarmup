@@ -15,7 +15,7 @@ public:
 	virtual bool intersect(Ray& ray, HitInfo& hit) const { return intersect(ray, hit); };
 	virtual bool intersect(Ray& ray, unsigned int i) const { return intersect(ray, HitInfo(), i); };
 	/// return the number of primitives in the geometry
-	virtual size_t num_primitives() const = 0;
+	virtual unsigned int num_primitives() const = 0;
 	/// the AABB for the whole geometry
 	virtual AABB get_bbox() const = 0;
 	/// the AABB for the primitive at index i

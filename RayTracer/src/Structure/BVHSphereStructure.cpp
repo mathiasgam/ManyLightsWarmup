@@ -11,9 +11,9 @@
 
 BVHSphereStructure::BVHSphereStructure(std::vector<Sphere>spheres)
 {
-	const size_t size = spheres.size();
+	const unsigned int size = static_cast<unsigned int>(spheres.size());
 	primitives = std::vector<Primitive>();
-	for (int i = 0; i < size;i++) {
+	for (unsigned int i = 0; i < size;i++) {
 		Primitive p = {};
 		p.aabb = spheres[i].get_bbox();
 		p.GeometryIndex = i;
@@ -37,7 +37,7 @@ BVHSphereStructure::BVHSphereStructure(std::vector<Sphere>spheres)
 	cz.reserve(size);
 	r.reserve(size);
 
-	for (int i = 0; i < size; i++) {
+	for (unsigned int i = 0; i < size; i++) {
 		Sphere s = spheres[i];
 		cx.push_back(s.center[0]);
 		cy.push_back(s.center[1]);
@@ -66,11 +66,11 @@ bool BVHSphereStructure::tracePrimitive(Ray& ray, HitInfo& hit, int i) {
 	return false;
 }
 
-BVHSphereStructure::BVHNode * BVHSphereStructure::build(std::vector<Primitive>& primitives, int left, int right)
+BVHSphereStructure::BVHNode * BVHSphereStructure::build(std::vector<Primitive>& primitives, unsigned int left, unsigned int right)
 {
 	BVHNode* node = new BVHNode();
 	AABB aabb;
-	for (int i = left; i < right; i++) {
+	for (unsigned int i = left; i < right; i++) {
 		aabb = AABB(aabb, primitives[i].aabb);
 	}
 	node->aabb = aabb;

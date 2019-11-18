@@ -1,5 +1,7 @@
 #pragma once
 
+#include "config.h"
+
 #include <vector>
 #include <string>
 #include <string_view>
@@ -35,7 +37,13 @@ private:
 
 	LBVHStructure BVHMesh;
 	LBVHStructure BVHVisuals;
+
+#if USE_LIGHT_TREE
 	BULightTree BVHLights;
+#else
+	LightArray BVHLights;
+#endif
+
 	//LightTree BVHLights;
 
 	Vec3f ambient = Vec3f(0.1f, 0.1f, 0.1f);
@@ -63,10 +71,10 @@ public: /// Public Functions
 
 	void LoadScene(const std::string_view filename);
 
-	unsigned int GetNumModels() const { return models.size(); }
-	unsigned int GetNumMeshes() const { return meshes.size(); }
-	unsigned int GetNumLights() const { return lights.size(); }
-	unsigned int GetNumPlanes() const { return planes.size(); }
+	unsigned int GetNumModels() const { return static_cast<unsigned int>(models.size()); }
+	unsigned int GetNumMeshes() const { return static_cast<unsigned int>(meshes.size()); }
+	unsigned int GetNumLights() const { return static_cast<unsigned int>(lights.size()); }
+	unsigned int GetNumPlanes() const { return static_cast<unsigned int>(planes.size()); }
 
 	const Material* GetMaterial(unsigned int index) const { return materials[index]; }
 

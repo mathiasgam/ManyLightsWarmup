@@ -24,7 +24,7 @@ public:
 	bool intersect(Ray& ray, HitInfo& hit, unsigned int i) const;
 
 	/// return the number of faces in the mesh
-	size_t num_primitives() const { return geometry.num_faces(); }
+	unsigned int num_primitives() const { return static_cast<unsigned int>(geometry.num_faces()); }
 
 	/// returns the bbox for the whole mesh
 	AABB get_bbox() const;

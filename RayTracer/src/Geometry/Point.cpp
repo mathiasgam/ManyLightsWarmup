@@ -33,9 +33,9 @@ bool Point::intersect(Ray& ray, HitInfo& hit, unsigned int i) const
 	return false;
 }
 
-size_t Point::num_primitives() const
+unsigned int Point::num_primitives() const
 {
-	return static_cast<size_t>(1);
+	return 1;
 }
 
 AABB Point::get_bbox() const

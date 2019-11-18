@@ -133,7 +133,7 @@ template<class KeyT, class ValT, unsigned int K>
 inline void KdTree<KeyT, ValT, K>::Build()
 {
 	nodes.resize(keys.size());
-	BuildRecurse(1, 1, nodes.size());
+	BuildRecurse(1, 1, static_cast<unsigned int>(nodes.size()));
 	isBuild = true;
 }
 
@@ -141,7 +141,7 @@ inline void KdTree<KeyT, ValT, K>::Build()
 template<class KeyT, class ValT, unsigned int K>
 inline unsigned int KdTree<KeyT, ValT, K>::Size() const
 {
-	return nodes.size();
+	return static_cast<unsigned int>(nodes.size());
 }
 
 

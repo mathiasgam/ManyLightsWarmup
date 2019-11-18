@@ -51,7 +51,7 @@ void LBVHStructure::init(const std::vector<const Geometry*>& _geometry, const st
 
 	std::cout << "Building BVH structure\n";
 	// recursively construct the binary search tree
-	root = generateHierarchy(primitives, 0, primitives.size() - 1);
+	root = generateHierarchy(primitives, 0, static_cast<int>(primitives.size()) - 1);
 
 	assert(root != nullptr);
 	calculateBBox(root);
@@ -164,7 +164,7 @@ LBVHStructure::Node* LBVHStructure::generateHierarchy(std::vector<Primitive>& so
 		node->ChildA = nullptr;
 		node->ChildB = nullptr;
 		node->primitive = first;
-		assert(node != nullptr, "created node is nullptr");
+		assert(node != nullptr); // created node is nullptr
 		return node;
 	}
 
@@ -177,9 +177,9 @@ LBVHStructure::Node* LBVHStructure::generateHierarchy(std::vector<Primitive>& so
 
 	node->primitive = -1;
 
-	assert(node->ChildA != nullptr, "created node is nullptr");
-	assert(node->ChildB != nullptr, "created node is nullptr");
-	assert(node != nullptr, "created node is nullptr");
+	assert(node->ChildA != nullptr); // created node is nullptr
+	assert(node->ChildB != nullptr); // created node is nullptr
+	assert(node != nullptr); // created node is nullptr
 
 	return node;
 }
@@ -195,7 +195,7 @@ int LBVHStructure::findSplit(std::vector<Primitive>& sortedPrimitives, int first
 	// Calculate the number of highest bits that are the same
 	// for all objects, using the count-leading-zeros intrinsic.
 
-	int commonPrefix = clz(firstCode.data ^ lastCode.data);
+	int commonPrefix = static_cast<int>(clz(firstCode.data ^ lastCode.data));
 	//int commonPrefix = __clz(firstCode ^ lastCode);
 
 	// Use binary search to find where the next bit differs.
@@ -213,7 +213,7 @@ int LBVHStructure::findSplit(std::vector<Primitive>& sortedPrimitives, int first
 		if (newSplit < last)
 		{
 			MortonCode3 splitCode = sortedPrimitives[newSplit].code;
-			int splitPrefix = clz(firstCode.data ^ splitCode.data);
+			int splitPrefix = static_cast<int>(clz(firstCode.data ^ splitCode.data));
 			if (splitPrefix > commonPrefix)
 				split = newSplit; // accept proposal
 		}
@@ -224,7 +224,7 @@ int LBVHStructure::findSplit(std::vector<Primitive>& sortedPrimitives, int first
 
 void LBVHStructure::calculateBBox(Node* node)
 {
-	assert(node != nullptr, "Node need to be initialized");
+	assert(node != nullptr); // Node need to be initialized
 	//std::cout << "Nodetype: " << node->type << "\n";
 	if (node->type == NodeType::Leaf) {
 		Primitive& p = primitives[node->primitive];
@@ -241,7 +241,7 @@ void LBVHStructure::calculateBBox(Node* node)
 		node->center = node->bbox.center();
 		return;
 	}
-	assert(false, "node type not recognized");
+	assert(false); // node type not recognized
 }
 
 

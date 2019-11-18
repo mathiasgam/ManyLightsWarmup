@@ -360,17 +360,17 @@ inline std::ostream& operator<<(std::ostream&os, const ArithVec<T, V, K>& v)
 	return os;
 }
 
-inline unsigned int clz(uint64_t code)
+inline uint64_t clz(uint64_t code)
 {
 	return __lzcnt64(code);
 }
 
-inline unsigned int clz(uint32_t code)
+inline uint32_t clz(uint32_t code)
 {
 	return __lzcnt(code);
 }
 
-inline unsigned int clz(uint16_t code)
+inline uint16_t clz(uint16_t code)
 {
 	return __lzcnt16(code);
 }

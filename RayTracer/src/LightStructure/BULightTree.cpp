@@ -1,4 +1,5 @@
 #include "BULightTree.h"
+#include "config.h"
 
 #include <limits>
 #include <cassert>
@@ -10,7 +11,6 @@
 #include "Sampling.h"
 #include "KdTree.h"
 
-#define RANDOM_THRESHOLD true
 
 BULightTree::BULightTree() : ReprecentativeLights(0)
 {

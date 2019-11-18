@@ -32,9 +32,9 @@ bool Line::intersect(Ray& ray, HitInfo& hit, unsigned int i) const
 	return false;
 }
 
-size_t Line::num_primitives() const
+unsigned int Line::num_primitives() const
 {
-	return static_cast<size_t>(1);
+	return 1;
 }
 
 AABB Line::get_bbox() const

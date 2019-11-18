@@ -16,14 +16,14 @@ public:
 	~IndexedFaceSet() {}
 
 	/// adds the vertex v to the set, and returns the index
-	inline unsigned int addVertex(const Vec3f& v) { vertices.push_back(v); return vertices.size() - 1; }
+	inline unsigned int addVertex(const Vec3f& v) { vertices.push_back(v); return static_cast<unsigned int>(vertices.size()) - 1; }
 	/// adds the face f to the set, and returns the index
-	inline unsigned int addFace(const Vec3ui& f) { faces.push_back(f); return faces.size() - 1; }
+	inline unsigned int addFace(const Vec3ui& f) { faces.push_back(f); return static_cast<unsigned int>(faces.size()) - 1; }
 
 	/// returns the number of vertices in the set
-	inline size_t num_vertices() const { return vertices.size(); }
+	inline unsigned int num_vertices() const { return static_cast<unsigned int>(vertices.size()); }
 	/// returns the number of faces in the set
-	inline size_t num_faces() const { return faces.size(); }
+	inline unsigned int num_faces() const { return static_cast<unsigned int>(faces.size()); }
 
 	/// returns the vertex at index i in the set
 	inline const Vec3f& vertex(unsigned int i) const { return vertices[i]; }

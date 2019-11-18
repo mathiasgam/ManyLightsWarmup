@@ -1,3 +1,5 @@
+
+#include "config.h"
 #include "Ray.h"
 #include "Geometry/Sphere.h"
 #include "Geometry/SphereGroup.h"
@@ -42,9 +44,9 @@
 #include "KdTree.h"
 
 void addLightCluster(Scene* scene, Vec3f center, Vec3f dim, Vec3f color, unsigned int N) {
-	for (int i = 0; i < N; i++) {
+	for (unsigned int i = 0; i < N; i++) {
 		Vec3f pos = random(center - dim, center + dim);
-		scene->AddLight(pos, Vec3f(random(0.1f, 1.0f), random(0.1f, 1.0f), random(0.1f, 1.0f)).normalized() * color / N);
+		scene->AddLight(pos, Vec3f(random(0.1f, 1.0f), random(0.1f, 1.0f), random(0.1f, 1.0f)).normalized() * color / static_cast<float>(N));
 	}
 }
 
@@ -120,8 +122,8 @@ int main() {
 
 	//exit(0);
 
-	int width = 1080;
-	int height = 720;
+	const unsigned int width = 1080;
+	const unsigned int height = 720;
 	float aspect = (float)width / (float)height;
 	Vec2f pixel_dim = Vec2f(1.0f / width, 1.0f / height);
 	std::cout << "Width: " << width << ", Height: " << height << ", Aspect: " << aspect << std::endl;
@@ -132,11 +134,12 @@ int main() {
 	//cam.SetPosition(Vec3f(-2.0f, 2.0f, 3.0f));
 	//cam.SetPosition(Vec3f(-20.0f, 10.0f, 10.0f));
 	//cam.SetPosition(Vec3f(-8.0f, 1.0f, 10.0f));
-	//cam.SetPosition(Vec3f(10.0f, 1.7f, 0.0f)); // sponza
-	//cam.LookAt(Vec3f(0.0f, 0.5f, 0.5f));
 
-	cam.SetPosition(Vec3f(10.0f, 1.0f, -4.0f)); // sponza side
-	cam.LookAt(Vec3f(0.0f, 0.5f, -4.5f));
+	cam.SetPosition(Vec3f(10.0f, 1.7f, 0.0f)); // sponza
+	cam.LookAt(Vec3f(0.0f, 0.5f, 0.5f));
+
+	//cam.SetPosition(Vec3f(10.0f, 1.0f, -4.0f)); // sponza side
+	//cam.LookAt(Vec3f(0.0f, 0.5f, -4.5f));
 
 	// scene added as pointer, for easier access over multiple threads
 	Scene* scene = new Scene();
@@ -146,13 +149,13 @@ int main() {
 	tracer->SetLightThreshold(0.02f);
 
 	// start timing
-	std::clock_t start;
-	start = std::clock();
+	double start;
+	start = static_cast<double>(std::clock());
 
 	// build tracing structures. if additional objects is added or moved around, the scene need to be prepared again
 	scene->prepare();
 
-	std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC) << " s" << std::endl;
+	std::cout << "Time: " << (static_cast<double>(std::clock()) - start) / static_cast<double>(CLOCKS_PER_SEC) << " s" << std::endl;
 
 
 	// define images to render to
@@ -168,7 +171,7 @@ int main() {
 
 	float epsilon = 0.0001f;
 
-	std::size_t max = static_cast<size_t>(width * height);
+	const unsigned int max = width * height;
 
 	struct Report {
 		unsigned int num_rays;
@@ -178,7 +181,7 @@ int main() {
 
 	// find the number of cores available
 	std::size_t cores = std::thread::hardware_concurrency();
-	volatile std::atomic<std::size_t> count(0);
+	volatile std::atomic<unsigned int> count(0);
 	std::vector<std::future<Report>> future_vector;
 
 	// add Async processies until all cores have one
@@ -194,15 +197,15 @@ int main() {
 					while (true)
 					{
 						// get the next pixel
-						std::size_t index = count++;
+						const unsigned int index = count++;
 						if (index >= max)
 							break;
 
 						if ((index + 1) % (max / 10) == 0)
 							std::cout << ".";
 
-						std::size_t i = index % width;
-						std::size_t j = index / width;
+						const unsigned int i = index % width;
+						const unsigned int j = index / width;
 
 						Vec3f color = Vec3f(0.0f);
 						float f = 0.0f;
@@ -248,14 +251,14 @@ int main() {
 
 	std::cout << std::endl;
 
-	const double seconds = (std::clock() - start) / (double)(CLOCKS_PER_SEC);
-	const double mil_rays = (report_final.num_rays + report_final.num_occlusion_rays) / 10e6;
+	const double seconds = (static_cast<double>(std::clock()) - start) / static_cast<double>(CLOCKS_PER_SEC);
+	const double mil_rays = (static_cast<double>(report_final.num_rays) + static_cast<double>(report_final.num_occlusion_rays)) / 10e6;
 	std::cout << "\nReport: \n";
 	std::cout << "- Time: " << seconds << " sec" << std::endl;
 
 	std::cout << "- M Rays: " << mil_rays << "\n- M Rays / sec: " << mil_rays / seconds << std::endl;
 
-	float avg_lights = report_final.num_lights / (width * height);
+	float avg_lights = report_final.num_lights / static_cast<float>(width * height);
 	std::cout << "- Avg lights: " << avg_lights << ", reduction: " << avg_lights / scene->GetNumLights() << std::endl;
 
 	img.save_as("Test.png");

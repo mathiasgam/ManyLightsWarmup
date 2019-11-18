@@ -21,7 +21,7 @@ public:
 	/// intersect primitive inside the geometry at index i
 	bool intersect(Ray& ray, HitInfo& hit, unsigned int i) const;
 	/// return the number of primitives in the geometry
-	size_t num_primitives() const { return 1; }
+	unsigned int num_primitives() const { return 1; }
 	/// the AABB for the whole geometry
 	AABB get_bbox() const;
 	/// the AABB for the primitive at index i

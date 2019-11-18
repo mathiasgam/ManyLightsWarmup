@@ -77,11 +77,11 @@ AABB TriMesh::get_bbox() const
 {
 	AABB bbox;
 	const unsigned int N = geometry.num_vertices();
-	for (int i = 0; i < N; i++) {
+	for (unsigned int i = 0; i < N; i++) {
 		bbox.add_point(geometry.vertex(i));
 	}
 	Vec3f diagonal = bbox.p_max - bbox.p_min;
-	for (int i = 0; i < 3; i++) {
+	for (unsigned int i = 0; i < 3; i++) {
 		if (diagonal[i] <= 0.001f) {
 			bbox.p_max[i] += 0.001f;
 			bbox.p_min[i] -= 0.001f;
@@ -115,7 +115,7 @@ void TriMesh::normalize()
 	Vec3f translation = bbox.center();
 	float inverse = 1.0f / max_size;
 	const auto num_vertices = geometry.num_vertices();
-	for (int i = 0; i < num_vertices; i++) {
+	for (unsigned int i = 0; i < num_vertices; i++) {
 		geometry.vertices[i] *= inverse;
 		geometry.vertices[i] -= translation * inverse;
 	}
@@ -124,7 +124,7 @@ void TriMesh::normalize()
 void TriMesh::translate(const Vec3f& diff)
 {
 	unsigned int num_vertices = geometry.num_vertices();
-	for (int i = 0; i < num_vertices; i++) {
+	for (unsigned int i = 0; i < num_vertices; i++) {
 		geometry.vertices[i] += diff;
 	}
 }

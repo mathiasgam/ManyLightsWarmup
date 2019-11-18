@@ -13,7 +13,9 @@ workspace "ManyLights"
       optimize "On"
 
       filter "action:vs*"
-      	buildoptions { "/arch:AVX2", "/Ox", "/Oi", "/Ot", "/GL", "/LTCG:incremental" }
+      	buildoptions { "/Ox", "/Oi", "/Ot", "/GL" }
+      	linkoptions { "/LTCG", "/INCREMENTAL" }
+      	vectorextensions "AVX2"
   		--defines "/arch:AVX2"
 
     filter "configurations:Dist"
@@ -21,10 +23,13 @@ workspace "ManyLights"
       optimize "On"
 
       filter "action:vs*"
-  		buildoptions { "/arch:AVX2", "/Ox", "/Oi", "/Ot", "/GL", "/LTCG:incremental" }
+  		buildoptions { "/Ox", "/Oi", "/Ot", "/GL" }
+  		linkoptions { "/LTCG", "/INCREMENTAL" }
+  		vectorextensions "AVX2"
 
   	filter "configurations:Debug"
   		defines "DEBUG"
+  		linkoptions { "/LTCG", "/INCREMENTAL" }
 
 
 

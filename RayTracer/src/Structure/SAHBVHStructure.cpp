@@ -46,7 +46,7 @@ void SAHBVHStructure::init(const std::vector<const Geometry*>& geometry, const s
 
 	std::cout << "Building BVH structure\n";
 	// recursively construct the binary search tree
-	root_index = build(primitives_build, 0, primitives_build.size());
+	root_index = build(primitives_build, 0, static_cast<unsigned int>(primitives_build.size()));
 
 
 	std::cout << "Precomputing bbox centers\n";
@@ -112,7 +112,7 @@ bool SAHBVHStructure::closest_hit_recurse(Ray &ray, HitInfo &hit, unsigned int i
 	bool hashit = false;
 	if (node.bbox.intersect(ray)) {
 		if (node.type == leaf) {
-			for (int j = node.leftChild; j < node.rightChild; j++) {
+			for (unsigned int j = node.leftChild; j < node.rightChild; j++) {
 				const Primitive p = primitives[j];
 				if (objects[p.object]->intersect(ray, hit, p.index)) {
 					hashit = true;
@@ -149,7 +149,7 @@ bool SAHBVHStructure::any_hit_recurse(Ray &ray, unsigned int i, const Vec3f& dir
 	const BVHNode& node = nodes[i];
 	if (node.bbox.intersect(ray)) {
 		if (node.type == leaf) {
-			for (int j = node.leftChild; j < node.rightChild; j++) {
+			for (unsigned int j = node.leftChild; j < node.rightChild; j++) {
 				const Primitive& p = primitives[j];
 				if (objects[p.object]->intersect(ray, p.index)) {
 					return true;
@@ -193,7 +193,7 @@ AABB SAHBVHStructure::recalculate_bboxes(unsigned int index)
 	AABB bbox = AABB();
 	const BVHNode& node = nodes[index];
 	if (node.type == leaf) {
-		for (int i = node.leftChild; i < node.rightChild; i++) {
+		for (unsigned int i = node.leftChild; i < node.rightChild; i++) {
 			Primitive& primitive = primitives[i];
 			bbox.add_bbox(objects[primitive.object]->get_bbox(primitive.index));
 		}
@@ -217,7 +217,7 @@ unsigned int SAHBVHStructure::build(std::vector<Primitive_Fat>& fat_primitives, 
 {
 	// create node in the vector
 	unsigned int num = end - start;
-	unsigned int index = nodes.size();
+	unsigned int index = static_cast<unsigned int>(nodes.size());
 	{
 		BVHNode n;
 		nodes.push_back(n);
@@ -261,7 +261,7 @@ unsigned int SAHBVHStructure::build(std::vector<Primitive_Fat>& fat_primitives, 
 			int num_left = 0;
 			int num_right = 0;
 
-			for (int k = start; k < end; k++) {
+			for (unsigned int k = start; k < end; k++) {
 				if (fat_primitives[k].center[axis] <= split) {
 					_left_bbox.add_bbox(fat_primitives[k].bbox);
 					num_left++;
