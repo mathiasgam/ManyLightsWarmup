@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <unordered_set>
 
 #include "Vec3f.h"
 
@@ -18,7 +19,7 @@ private:
 		short axis;
 
 		KdNode() : axis(-1) {}
-		KdNode(const KeyT& _key, const ValT& _val) : key(_key), val(_val), axis(-1) {}
+		KdNode(const KeyT& in_key, const ValT& in_val) : key(in_key), val(in_val), axis(-1) {}
 		~KdNode() {}
 
 		float SqrDist(const KeyT& other) const {
@@ -40,7 +41,7 @@ private:
 
 	public:
 		KeyAxisCompare() : axis(-1) {}
-		KeyAxisCompare(short _axis) : axis(_axis) {}
+		KeyAxisCompare(short in_axis) : axis(in_axis) {}
 		bool operator() (const KdNode& k0, const KdNode& k1) const {
 			return k0.key[axis] < k1.key[axis];
 		}
@@ -61,9 +62,11 @@ public:
 	KdTree();
 	~KdTree();
 
-	bool Nearest(const KeyT& key, float dist, KeyT& out_key, ValT& out_val) const;
+	bool Nearest(const KeyT& in_key, float& in_out_dist, KeyT& out_key, ValT& out_val) const;
+	unsigned int NearestExcept(const KeyT& in_key, float& in_out_dist, KeyT& out_key, ValT& out_val, const std::unordered_set<unsigned int>& in_except) const;
 
-	void Insert(const KeyT& _key, const ValT& _val);
+	void Insert(const KeyT& in_key, const ValT& in_val);
+	void ExcangeVal(const ValT& in_val, const unsigned int in_index);
 	//void remove(const T*);
 	void Build();
 
@@ -75,10 +78,11 @@ public:
 
 private:
 
-	void BuildRecurse(const int current, const int begin, const int end);
+	void BuildRecurse(const unsigned int in_current, const unsigned int in_begin, const unsigned int in_end);
 	/// will return the index of the nearest node in the tree within the distance 'dist', if present. 
-	int NearestRecurse(const int node, const KeyT& key, float& dist) const;
-	int OptimalAxis(const unsigned int begin, const unsigned int end) const;
+	unsigned int NearestRecurse(const unsigned int in_node, const KeyT& in_key, float& in_out_dist) const;
+	unsigned int NearestRecurseExcept(const unsigned int in_node, const KeyT& in_key, float& in_out_dist, const std::unordered_set<unsigned int>& in_except) const;
+	int OptimalAxis(const unsigned int in_begin, const unsigned int in_end) const;
 
 };
 
@@ -88,8 +92,8 @@ template<class KeyT, class ValT, unsigned int K>
 inline KdTree<KeyT, ValT, K>::KdTree()
 {
 	isBuild = false;
-	nodes = std::vector<KdNode>();
-	keys = std::vector<KdNode>();
+	nodes = std::vector<KdNode>(1);
+	keys = std::vector<KdNode>(1);
 	for (int i = 0; i < K; i++) {
 		axisCompare[i] = KeyAxisCompare(i);
 	}
@@ -102,14 +106,16 @@ inline KdTree<KeyT, ValT, K>::~KdTree()
 }
 
 template<class KeyT, class ValT, unsigned int K>
-inline bool KdTree<KeyT, ValT, K>::Nearest(const KeyT& key, float dist, KeyT& out_key, ValT& out_val) const
+inline bool KdTree<KeyT, ValT, K>::Nearest(const KeyT& in_key, float& in_out_dist, KeyT& out_key, ValT& out_val) const
 {
+	std::cout << "Nearest:" << std::endl;
 	// check that the tree is in fact build since last insert
 	assert(isBuild);
 
 	if (nodes.size() > 1) {
 		// float sqr_dist = dist * dist;
-		if (int n = NearestRecurse(1, key, dist)) {
+		if (int n = NearestRecurse(1, in_key, in_out_dist)) {
+			std::cout << "res = " << n << std::endl;
 			out_key = nodes[n].key;
 			out_val = nodes[n].val;
 			//dist = sqrt(dist);
@@ -119,14 +125,50 @@ inline bool KdTree<KeyT, ValT, K>::Nearest(const KeyT& key, float dist, KeyT& ou
 	return false;
 }
 
+template<class KeyT, class ValT, unsigned int K>
+inline unsigned int KdTree<KeyT, ValT, K>::NearestExcept(const KeyT& in_key, float& in_out_dist, KeyT& out_key, ValT& out_val, const std::unordered_set<unsigned int>& in_except) const
+{
+	std::cout << "Nearest Except:";
+	for (unsigned int i : except) {
+		std::cout << " " << i;
+	}
+	std::cout << std::endl;
+	// check that the tree is in fact build since last insert
+	assert(isBuild);
+
+	if (nodes.size() > 1) {
+		// float sqr_dist = dist * dist;
+		if (unsigned int n = NearestRecurseExcept(1, key, dist, except)) {
+			out_key = nodes[n].key;
+			out_val = nodes[n].val;
+			//dist = sqrt(dist);
+			return n;
+		}
+	}
+	return 0;
+}
+
 
 template<class KeyT, class ValT, unsigned int K>
-inline void KdTree<KeyT, ValT, K>::Insert(const KeyT& _key, const ValT& _val)
+inline void KdTree<KeyT, ValT, K>::Insert(const KeyT& in_key, const ValT& in_val)
 {
 	if (isBuild) {
 		isBuild = false;
+		std::vector<KdNode> v(1);
+		keys.swap(v);
 	}
-	keys.push_back(KdNode(_key, _val));
+	keys.push_back(KdNode(in_key, in_val));
+}
+
+template<class KeyT, class ValT, unsigned int K>
+inline void KdTree<KeyT, ValT, K>::ExcangeVal(const ValT& in_val, const unsigned int in_index)
+{
+	if (in_index < nodes.size()) {
+		nodes[in_index].val = in_val;
+	}
+	else {
+		assert(false); // cannot excange a value at a index wich is not there
+	}
 }
 
 template<class KeyT, class ValT, unsigned int K>
@@ -134,6 +176,8 @@ inline void KdTree<KeyT, ValT, K>::Build()
 {
 	nodes.resize(keys.size());
 	BuildRecurse(1, 1, static_cast<unsigned int>(nodes.size()));
+	std::vector<KdNode> v(1);
+	keys.swap(v);
 	isBuild = true;
 }
 
@@ -152,22 +196,23 @@ inline bool KdTree<KeyT, ValT, K>::IsBuild() const
 }
 
 template<class KeyT, class ValT, unsigned int K>
-inline void KdTree<KeyT, ValT, K>::BuildRecurse(const int current, const int begin, const int end)
+inline void KdTree<KeyT, ValT, K>::BuildRecurse(const unsigned int in_current, const unsigned int in_begin, const unsigned int in_end)
 {
-	const int N = end - begin;
+	assert(in_begin <= in_end); // cannot use negative ranges
+	const unsigned int N = in_end - in_begin;
 
 	if (N == 1) {
-		nodes[current] = keys[begin];
-		nodes[current].axis = -1;
+		nodes[in_current] = keys[in_begin];
+		nodes[in_current].axis = -1;
 		return;
 	}
 
 	// find the best axis to sort split the elements on
-	short axis = OptimalAxis(begin, end);
-	const int M = 1 << fast_log2(N);
-	const int R = N - (M - 1);
-	int left_size = (M - 2) / 2;
-	int right_size = (M - 2) / 2;
+	short axis = OptimalAxis(in_begin, in_end);
+	const unsigned int M = 1 << fast_log2(N);
+	const unsigned int R = N - (M - 1);
+	unsigned int left_size = (M - 2) / 2;
+	unsigned int right_size = (M - 2) / 2;
 	if (R < M / 2) {
 		left_size += R;
 	}
@@ -177,52 +222,53 @@ inline void KdTree<KeyT, ValT, K>::BuildRecurse(const int current, const int beg
 	}
 
 	// find median
-	int median = begin + left_size;
+	unsigned int median = in_begin + left_size;
 
 	// sort the keys according to the axis
 	KdNode* data = keys.data();
-	std::nth_element(data + begin, data + median, data + end, axisCompare[axis]);
+	std::nth_element(data + in_begin, data + median, data + in_end, axisCompare[axis]);
 
 	// insert node in the trace tree
-	nodes[current] = keys[median];
-	nodes[current].axis = axis;
+	nodes[in_current] = keys[median];
+	nodes[in_current].axis = axis;
 
 	// recursively build left and right subtree
 	if (left_size > 0)
-		BuildRecurse(current * 2, begin, median);
+		BuildRecurse(in_current * 2, in_begin, median);
 
 	if (right_size > 0)
-		BuildRecurse(current * 2 + 1, median + 1, end);
+		BuildRecurse(in_current * 2 + 1, median + 1, in_end);
 }
 
 template<class KeyT, class ValT, unsigned int K>
-inline int KdTree<KeyT, ValT, K>::NearestRecurse(const int node, const KeyT& key, float& _dist) const
+inline unsigned int KdTree<KeyT, ValT, K>::NearestRecurse(const unsigned int in_node, const KeyT& in_key, float& in_dist) const
 {
-	int return_node = 0;
-	float dist = nodes[node].Dist(key);
+	unsigned int return_node = 0;
+	float dist = nodes[in_node].Dist(in_key);
+	std::cout << "n=" << in_node << ", val: " << nodes[in_node].val << ", dist: " << dist << std::endl;
 
-	if (dist < _dist) {
-		_dist = dist;
-		return_node = node;
+	if (dist < in_dist) {
+		in_dist = dist;
+		return_node = in_node;
 	}
 
-	int axis = nodes[node].axis;
+	int axis = nodes[in_node].axis;
 	if (axis != -1) {
-		float axis_dist = fabsf(nodes[node].key[axis] - key[axis]);
-		bool axis_dir = key[axis] < nodes[node].key[axis];
+		float axis_dist = fabsf(nodes[in_node].key[axis] - in_key[axis]);
+		bool axis_dir = in_key[axis] < nodes[in_node].key[axis];
 
-		if (axis_dir || axis_dist < _dist) {
+		if (axis_dir || axis_dist < in_dist) {
 
-			int left_child = 2 * node;
+			unsigned int left_child = 2 * in_node;
 			if (left_child < nodes.size())
-				if (int nleft = NearestRecurse(left_child, key, _dist))
+				if (unsigned int nleft = NearestRecurse(left_child, in_key, in_dist))
 					return_node = nleft;
 
 		}
-		if (axis_dir || axis_dist < _dist) {
-			int right_child = 2 * node + 1;
+		if (!axis_dir || axis_dist < in_dist) {
+			unsigned int right_child = 2 * in_node + 1;
 			if (right_child < nodes.size())
-				if (int nright = NearestRecurse(right_child, key, _dist))
+				if (unsigned int nright = NearestRecurse(right_child, in_key, in_dist))
 					return_node = nright;
 		}
 	}
@@ -230,11 +276,47 @@ inline int KdTree<KeyT, ValT, K>::NearestRecurse(const int node, const KeyT& key
 }
 
 template<class KeyT, class ValT, unsigned int K>
-inline int KdTree<KeyT, ValT, K>::OptimalAxis(const unsigned int _begin, const unsigned int _end) const
+inline unsigned int KdTree<KeyT, ValT, K>::NearestRecurseExcept(const unsigned int in_node, const KeyT& in_key, float& in_dist, const std::unordered_set<unsigned int>& in_except) const
 {
-	KeyT keymin = keys[_begin].key;
-	KeyT keymax = keys[_begin].key;
-	for (unsigned int i = _begin + 1; i < _end; i++) {
+	unsigned int return_node = 0;
+	if (in_except.find(in_node) == in_except.end()) {
+		float dist = nodes[in_node].Dist(in_key);
+		std::cout << "n=" << in_node << ", val: " << nodes[in_node].val << ", dist: " << dist << std::endl;
+
+		if (dist < in_dist) {
+			in_dist = dist;
+			return_node = in_node;
+		}
+	}
+
+	int axis = nodes[in_node].axis;
+	if (axis != -1) {
+		float axis_dist = fabsf(nodes[in_node].key[axis] - in_key[axis]);
+		bool axis_dir = in_key[axis] < nodes[in_node].key[axis];
+
+		if (axis_dir || axis_dist < in_dist) {
+			unsigned int left_child = 2 * in_node;
+			if (left_child < nodes.size())
+				if (unsigned int nleft = NearestRecurseExcept(left_child, in_key, in_dist, in_except))
+					return_node = nleft;
+
+		}
+		if (!axis_dir || axis_dist < in_dist) {
+			unsigned int right_child = 2 * in_node + 1;
+			if (right_child < nodes.size())
+				if (unsigned int nright = NearestRecurseExcept(right_child, in_key, in_dist, in_except))
+					return_node = nright;
+		}
+	}
+	return return_node;
+}
+
+template<class KeyT, class ValT, unsigned int K>
+inline int KdTree<KeyT, ValT, K>::OptimalAxis(const unsigned int in_begin, const unsigned int in_end) const
+{
+	KeyT keymin = keys[in_begin].key;
+	KeyT keymax = keys[in_begin].key;
+	for (unsigned int i = in_begin + 1; i < in_end; i++) {
 		keymin = min(keymin, keys[i].key);
 		keymax = max(keymax, keys[i].key);
 	}

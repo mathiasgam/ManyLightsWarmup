@@ -24,6 +24,7 @@
 
 #include <vector>
 #include <iostream>
+#include <unordered_set>
 
 #include <ctime>
 
@@ -95,9 +96,45 @@ int main() {
 	// set the seed for the standard random function with constant value for comparable results across multiple runs
 	srand(42);
 
-	//KdTree<Vec3f, std::string, 3> kdtree = KdTree<Vec3f, std::string, 3>();
+	KdTree<Vec3f, std::string, 3> kdtree = KdTree<Vec3f, std::string, 3>();
 
-	/*std::vector<Vec3f> points = std::vector<Vec3f>();
+	kdtree.Insert(Vec3f(0, 0, 0), "blue");
+	kdtree.Insert(Vec3f(1, 0, 0), "green");
+	kdtree.Insert(Vec3f(1, 1, 0), "red");
+	kdtree.Insert(Vec3f(2, 1, 1), "yellow");
+	kdtree.Insert(Vec3f(2, 1, 3), "yellow");
+	kdtree.Insert(Vec3f(2, 2, 1), "yellow");
+	kdtree.Insert(Vec3f(2, 5, 1), "yellow");
+	kdtree.Insert(Vec3f(2, 1, 10), "yellow");
+	kdtree.Insert(Vec3f(7, 1, 10), "yellow");
+	kdtree.Insert(Vec3f(3, 2, 10), "yellow");
+	kdtree.Insert(Vec3f(2, 1, 10), "yellow");
+	kdtree.Insert(Vec3f(2, 7, 10), "yellow");
+	kdtree.Insert(Vec3f(1, 0, 10), "yellow");
+	kdtree.Insert(Vec3f(2, 1, 11), "yellow");
+
+	kdtree.Build();
+
+	{
+		Vec3f key;
+		std::string val;
+		kdtree.Nearest(Vec3f(-1, 0, 0), 10, key, val);
+		std::cout << "Closest: " << val << std::endl;
+	}
+
+	std::unordered_set<unsigned int> except = std::unordered_set<unsigned int>();
+	for (int i = 0; i < 3; i++) {
+		Vec3f pos;
+		std::string str;
+		int res = kdtree.NearestExcept(Vec3f(0, 0, 0), 10, pos, str, except);
+		if (res == 0)
+			std::cout << "Failed!!!" << std::endl;
+		std::cout << "n = " << res << ", Color: " << str << std::endl;
+		except.insert(res);
+	}
+	exit(0);
+	/*
+	std::vector<Vec3f> points = std::vector<Vec3f>();
 	KdTree<Vec3f, 3> kdtree = KdTree<Vec3f, 3>();
 
 	for (int i = 0; i < 10; i++) {
@@ -107,9 +144,10 @@ int main() {
 	for (Vec3f& point : points) {
 		kdtree.insert(&point);
 	}
+	*/
 
 	//std::cout << "Kd-tree depth: " << kdtree.depth() << ", size: " << kdtree.size() << std::endl;
-	*/
+	
 
 	/*
 	AABB test = AABB(Vec3f(2, 0, 2), Vec3f(3, 1, 3));
