@@ -118,21 +118,55 @@ int main() {
 	{
 		Vec3f key;
 		std::string val;
-		kdtree.Nearest(Vec3f(-1, 0, 0), 10, key, val);
-		std::cout << "Closest: " << val << std::endl;
+		float dist = 10.0f;
+		kdtree.Nearest(Vec3f(-1, 0, 0), dist, key, val);
+		std::cout << "Closest: " << val << ", dist: " << dist << std::endl;
 	}
 
 	std::unordered_set<unsigned int> except = std::unordered_set<unsigned int>();
 	for (int i = 0; i < 3; i++) {
 		Vec3f pos;
 		std::string str;
-		int res = kdtree.NearestExcept(Vec3f(0, 0, 0), 10, pos, str, except);
+		float dist = 10.0f;
+		int res = kdtree.NearestExcept(Vec3f(0, 0, 0), dist, pos, str, except);
 		if (res == 0)
 			std::cout << "Failed!!!" << std::endl;
-		std::cout << "n = " << res << ", Color: " << str << std::endl;
+		std::cout << "n = " << res << ", Color: " << str << ", dist: " << dist << std::endl;
 		except.insert(res);
 	}
-	exit(0);
+
+
+	if (unsigned int n = kdtree.Find(Vec3f(0, 0, 0), "blue")) {
+		std::cout << "Found: " << n << std::endl;
+	}
+	else {
+		std::cout << "None Found: " << n << std::endl;
+	}
+
+	if (unsigned int n = kdtree.Find(Vec3f(0, 0, 1), "blue")) {
+		std::cout << "Found: " << n << std::endl;
+	}
+	else {
+		std::cout << "None Found: " << n << std::endl;
+	}
+
+	if (unsigned int n = kdtree.Find(Vec3f(0, 0, 0), "red")) {
+		std::cout << "Found: " << n << std::endl;
+	}
+	else {
+		std::cout << "None Found: " << n << std::endl;
+	}
+
+	std::vector<KDTreeRecord<Vec3f, std::string>> res = std::vector<KDTreeRecord<Vec3f,std::string>>();
+	float dist = 10.0f;
+	kdtree.NNearest(Vec3f(0, 0, 0), "blue", dist, res, 3);
+
+	std::cout << "Found " << res.size() << " elements" << std::endl;
+	for (auto s : res) {
+		std::cout << "Value: " << s.val << ", dist: " << s.dist << std::endl;
+	}
+
+	//exit(0);
 	/*
 	std::vector<Vec3f> points = std::vector<Vec3f>();
 	KdTree<Vec3f, 3> kdtree = KdTree<Vec3f, 3>();

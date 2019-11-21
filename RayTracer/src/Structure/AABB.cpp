@@ -38,6 +38,15 @@ bool AABB::intersect(const Ray& ray, const Vec3f& dirfrac) const
 	
 }
 
+bool AABB::contained(const Vec3f& p) const
+{
+	for (unsigned int i = 0; i < 3; i++) {
+		if (p[i] < p_min[i] || p[i] > p_max[i])
+			return false;
+	}
+	return true;
+}
+
 Vec3f AABB::center()const
 {
 	return (p_min + p_max) / 2;

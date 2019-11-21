@@ -7,14 +7,18 @@ http://graphics.cs.cmu.edu/projects/aac/aac_build.pdf
 
 #include <utility>
 
+#include <set>
+#include <unordered_set>
+#include <unordered_map>
+#include <queue>
+
 #include "LightStructure.h"
 #include "Structure/AABB.h"
 
 #include "Geometry/Line.h"
 
-class BULightTree : LightStructure
-{
-private:
+namespace {
+
 	enum NodeType {
 		Internal,
 		Leaf
@@ -45,16 +49,47 @@ private:
 		float dist;
 	};
 
-	struct CompareDist {
-		bool operator()(NodePair const& p1, NodePair const& p2)
-		{
-			return p1.dist > p2.dist;
+	struct GraphNode {
+		LightNode* node;
+		bool is_alive;
+		GraphNode() : node(nullptr), is_alive(true) {}
+		GraphNode(LightNode* n) : node(n), is_alive(true) {}
+		bool operator==(const GraphNode v) const {
+			return node == v.node;
 		}
 	};
 
+	struct GraphEdge {
+		GraphNode* n1;
+		GraphNode* n2;
+		float dist;
+		GraphEdge(GraphNode* n1, GraphNode* n2, float dist) : n1(n1), n2(n2), dist(dist) {}
+	};
+
+	struct CompareDist {
+		bool operator()(GraphEdge const& e1, GraphEdge const& e2)
+		{
+			return e1.dist > e2.dist;
+		}
+	};
+
+	struct Graph {
+		std::vector<GraphNode> nodes;
+		std::priority_queue<GraphEdge, std::vector<GraphEdge>, CompareDist> edges;
+
+		Graph() : nodes(), edges() {}
+	};
+}
+
+class BULightTree : LightStructure
+{
+private:
+	const int N = 10;
+
 
 	std::vector<PointLight*> ReprecentativeLights;
-	LightNode* root = nullptr;
+	//LightNode* root = nullptr;
+	std::vector<LightNode*> light_forest;
 
 public:
 	BULightTree();
@@ -66,6 +101,8 @@ public:
 
 private:
 	void SearchLights(std::vector<PointLight*>& out, LightNode* node, const HitInfo& hit, float threshold) const;
+
+	void BuildTree(std::unordered_set<LightNode*>& clusters);
 
 	float distance(const PointLight* p1, const PointLight* p2);
 	PointLight* MergeLights(PointLight* A, PointLight* B);

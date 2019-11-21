@@ -3,22 +3,21 @@
 
 #include <limits>
 #include <cassert>
-#include <set>
-#include <unordered_set>
-#include <unordered_map>
-#include <queue>
+
 
 #include "Sampling.h"
 #include "KdTree.h"
 
 
-BULightTree::BULightTree() : ReprecentativeLights(0)
+BULightTree::BULightTree() : ReprecentativeLights(0), light_forest(0)
 {
 }
 
 BULightTree::~BULightTree()
 {
-	deleteNode(root);
+	for (auto c : light_forest) {
+		deleteNode(c);
+	}
 	for (PointLight* light : ReprecentativeLights) {
 		assert(light != nullptr);
 		delete light;
@@ -27,125 +26,197 @@ BULightTree::~BULightTree()
 
 void BULightTree::init(std::vector<PointLight*> lights)
 {
+	/*
+	- Define all lights as clusters.
+	- Build KdTree over all clusters.
+	- Find N nearest neighbors for each cluster.
+	- Create edges between all the nearest neighbors.
+	- Insert edges into priority queue.
+	- Begin collapsing edges and insert new clusters in the tree.
+		- Ignore edges to clusters which has been collapsed.
+	*/
+
 	std::cout << "Building Light structure\n";
 	const size_t num = lights.size();
 
 	// set for holding all the lights during construction.
 	//std::set<LightNode*> clusters;
 	std::unordered_set<LightNode*> clusters;
-	
-	KdTree<Vec3f, PointLight*, 3> kdtree = KdTree<Vec3f, PointLight*, 3>();
+	Graph graph = Graph();
+	KdTree<Vec3f, GraphNode*, 3> kdtree = KdTree<Vec3f, GraphNode*, 3>();
+	graph.nodes.resize(num);
 
 	// insert all lights in the cluster set.
-	for (PointLight* light : lights) {
+	for (int i = 0; i < num; i++) {
 		LightNode* node = new LightNode();
-		kdtree.Insert(light->position, light);
 
 		node->type = NodeType::Leaf;
-		node->bbox = AABB(light->position);
+		node->bbox = AABB(lights[i]->position);
 		node->ChildA = nullptr;
 		node->ChildB = nullptr;
-		node->reprecentative = light;
+		node->reprecentative = lights[i];
 
 		clusters.insert(node);
+		graph.nodes[i] = GraphNode(node);
+	}
+
+	// insert nodes from the graph into the kd tree
+	for (GraphNode& node : graph.nodes) {
+		kdtree.Insert(node.node->reprecentative->position, &node);
+		//std::cout << "Node*: " << &node << std::endl;
 	}
 
 	kdtree.Build();
-
-	class custom_priority_queue : public std::priority_queue<NodePair, std::vector<NodePair>, CompareDist>
 	{
-	public:
-		bool remove(const LightNode* value) {
-			bool res = false;
-			unsigned int size = 0;
-			auto itLeft = this->c.begin();
-			auto itRight = this->c.begin()++;
-			while (itRight != this->c.end()) {
-				if (itRight->n1 == value || itRight->n2 == value) {
-					itRight++;
-					continue;
-				}
-				*itLeft = *itRight;
-				itLeft++;
-				itRight++;
-				size++;
-			}
-			this->c.resize(size);
-			//std::make_heap(this->c.begin(), this->c.end(), this->comp);
-			return res;
-		}
-	};
+		Vec3f pos;
+		GraphNode* node;
+		float dist = 10.0f;
+		kdtree.Nearest(Vec3f(0, 0, 0), dist, pos, node);
+		//std::cout << "Closest: " << dist << "pos: " << pos << std::endl;
+	}
+
+
+	//std::cout << "KdTree size: " << kdtree.Size() << std::endl;
+
+	//class custom_priority_queue : public std::priority_queue<NodePair, std::vector<NodePair>, CompareDist>
+	//{
+	//public:
+	//	// fast remove of unused nodes. Good if many unused nodes is in the queue
+	//	bool remove(const LightNode* value) {
+	//		bool res = false;
+	//		unsigned int size = 0;
+	//		auto itLeft = this->c.begin();
+	//		auto itRight = this->c.begin()++;
+	//		while (itRight != this->c.end()) {
+	//			if (itRight->n1 == value || itRight->n2 == value) {
+	//				itRight++;
+	//				continue;
+	//			}
+	//			*itLeft = *itRight;
+	//			itLeft++;
+	//			itRight++;
+	//			size++;
+	//		}
+	//		this->c.resize(size);
+	//		//std::make_heap(this->c.begin(), this->c.end(), this->comp);
+	//		return res;
+	//	}
+	//};
 
 	// min queue
 	//std::priority_queue<NodePair, std::vector<NodePair>, CompareDist> Queue = std::priority_queue<NodePair, std::vector<NodePair>, CompareDist>();
-	custom_priority_queue Queue = custom_priority_queue();
+	//auto AdjacencyMatrix = std::unordered_map<LightNode*, std::vector<KDTreeRecord<Vec3f, LightNode*>>>(); // keeps track of all edges.
+	//auto edge_queue = custom_priority_queue(); // will contain all edges in order of length
 
-	for (LightNode* c1 : clusters) {
-		for (LightNode* c2 : clusters) {
-			if (c1 != c2) {
-				NodePair pair = {};
-				pair.n1 = c1;
-				pair.n2 = c2;
-				pair.dist = distance(c1->reprecentative, c2->reprecentative);
-				Queue.push(pair);
+
+	{
+		// find the best neighbors to each node
+
+		for (GraphNode& n1 : graph.nodes) {
+			LightNode* c1 = n1.node;
+			float dist = std::numeric_limits<float>::max();
+			std::vector<KDTreeRecord<Vec3f, GraphNode*>> res = std::vector<KDTreeRecord<Vec3f, GraphNode*>>();
+			kdtree.NNearest(c1->reprecentative->position, &n1, dist, res, N);
+			//std::cout << "closest dist: " << res[0].dist << std::endl;
+			for (int i = 0; i < N; i++) {
+				graph.edges.push(GraphEdge(&n1, res[i].val, distance(n1.node->reprecentative, res[i].val->node->reprecentative)));
 			}
 		}
 	}
+
+	std::cout << "Graph: nodes = " << graph.nodes.size() << ", edges = " << graph.edges.size() << std::endl;
 
 	// map for accelerating distance calculation.
 	//std::unordered_map<std::pair<LightNode*, LightNode*>, float, hash_pair> umap = std::unordered_map<std::pair<LightNode*, LightNode*>, float, hash_pair>();
 
-	while (clusters.size() > 1) {
+	while (graph.edges.size() > 1) {
 		//float best = std::numeric_limits<float>::infinity();
 
-		auto pair = Queue.top();
-		Queue.pop();
+		auto edge = graph.edges.top();
+		graph.edges.pop();
 
-		if (clusters.find(pair.n1) != clusters.end() && clusters.find(pair.n2) != clusters.end()) {
+		if (edge.n1->is_alive && edge.n2->is_alive) {
 
-			LightNode* left = pair.n1;
-			LightNode* right = pair.n2;
+			GraphNode* left = edge.n1;
+			GraphNode* right = edge.n2;
 
 			assert(left != nullptr);
 			assert(right != nullptr);
 			assert(right != left);
 
+			clusters.erase(left->node);
+			clusters.erase(right->node);
+
 			LightNode* node = new LightNode();
 			node->type = NodeType::Internal;
-			node->bbox = AABB(left->bbox, right->bbox);
-			node->ChildA = left;
-			node->ChildB = right;
-			node->reprecentative = MergeLights(left->reprecentative, right->reprecentative);
+			node->bbox = AABB(left->node->bbox, right->node->bbox);
+			node->ChildA = left->node;
+			node->ChildB = right->node;
 
-			clusters.erase(left);
-			clusters.erase(right);
-			clusters.insert(node);
+			PointLight* leftLight = left->node->reprecentative;
+			PointLight* rightLight = right->node->reprecentative;
+			float sumA = leftLight->color.element_sum();
+			float sumB = rightLight->color.element_sum();
+			float sum = sumA + sumB;
+			float p = sumA / sumB;
 
-			Queue.remove(left);
-			Queue.remove(right);
-
-			for (LightNode* c : clusters) {
-				if (c != node) {
-					NodePair _pair = {};
-					_pair.n1 = node;
-					_pair.n2 = c;
-					_pair.dist = distance(node->reprecentative, c->reprecentative);
-					Queue.push(_pair);
-				}
+			PointLight* light = nullptr;
+			if (random(0, 1) < p) {
+				Vec3f pos = leftLight->position;
+				Vec3f color = leftLight->color + rightLight->color;
+				light = new PointLight(pos, color);
+				ReprecentativeLights.push_back(light);
+				left->node = node;
+				right->is_alive = false;
+				//AdjacencyMatrix.insert(std::make_pair(node, AdjacencyMatrix[left]));
+			}
+			else {
+				Vec3f pos = rightLight->position;
+				Vec3f color = rightLight->color + leftLight->color;
+				light = new PointLight(pos, color);
+				ReprecentativeLights.push_back(light);
+				right->node = node;
+				left->is_alive = false;
+				//AdjacencyMatrix.insert(std::make_pair(node, AdjacencyMatrix[right]));
 			}
 
-			//std::cout << "cluster size: " << clusters.size() << ", map size: " << Queue.size() << std::endl;
+			node->reprecentative = light;
+
+			clusters.insert(node);
+
+			//SparseAdjacencyMatrix.remove(left);
+			//SparseAdjacencyMatrix.remove(right);
+
+
+			/*for (auto& neighbor : AdjacencyMatrix[node]) {
+				if (neighbor.val != node) {
+					NodePair _pair = {};
+					_pair.n1 = node;
+					_pair.n2 = neighbor.val;
+					_pair.dist = neighbor.dist;
+					edge_queue.push(_pair);
+				}
+			}*/
+
+
+			//std::cout << "nodes: " << graph.nodes.size() << ", edges: " << graph.edges.size() << std::endl;
 		}
 
 	}
 
-	root = *clusters.begin();
+	for (auto c : clusters) {
+		light_forest.push_back(c);
+	}
+	std::cout << "clusters: " << clusters.size() << std::endl;
+	//root = *clusters.begin();
 }
 
 std::vector<PointLight*> BULightTree::GetLights(const HitInfo& hit, float threshold) const
 {
 	std::vector<PointLight*> lights = std::vector<PointLight*>();
-	SearchLights(lights, root, hit, threshold);
+	for (auto c : light_forest)
+		SearchLights(lights, c, hit, threshold);
+
 
 	return lights;
 }
@@ -153,7 +224,8 @@ std::vector<PointLight*> BULightTree::GetLights(const HitInfo& hit, float thresh
 std::vector<Line> BULightTree::GetTreeEdges() const
 {
 	std::vector<Line> lines = std::vector<Line>();
-	GetTreeEdgesRecurse(lines, root, Vec3f(1, 0, 0));
+	for (auto c : light_forest)
+		GetTreeEdgesRecurse(lines, c, Vec3f(1, 0, 0));
 	return lines;
 }
 
@@ -170,16 +242,21 @@ void BULightTree::SearchLights(std::vector<PointLight*>& out, LightNode* node, c
 	if (max(t1, t2).max_componont() < 0.0f)
 		return;
 	*/
-
-	const float cos_theta_bound = CosineBound(hit.position, hit.normal, node->bbox);
-	if (cos_theta_bound < 0.0f) {
+	if (node->bbox.contained(hit.position)) {
+		SearchLights(out, node->ChildA, hit, threshold);
+		SearchLights(out, node->ChildB, hit, threshold);
 		return;
 	}
 
-	if (cos_theta_bound > 1.0f) {
+	const float cos_theta_bound = CosineBound(hit.position, hit.normal, node->bbox);
+	if (cos_theta_bound <= 0.0f) {
+		return;
+	}
+
+	if (cos_theta_bound > 1.0001f) {
 		std::cout << "COS_THETA_BOUND: " << cos_theta_bound << ", FAILED!!!" << std::endl;
 	}
-		
+
 
 	Vec3f dir = hit.position - node->reprecentative->position;
 	const float dist = dir.length();
@@ -187,7 +264,7 @@ void BULightTree::SearchLights(std::vector<PointLight*>& out, LightNode* node, c
 	const float radius = (node->bbox.p_max - node->bbox.p_min).length() / 2.0f;
 
 	const float min_dist = dist - radius;
-	
+
 	if (min_dist <= 0) {
 		SearchLights(out, node->ChildA, hit, threshold);
 		SearchLights(out, node->ChildB, hit, threshold);
@@ -208,7 +285,7 @@ void BULightTree::SearchLights(std::vector<PointLight*>& out, LightNode* node, c
 #if RANDOM_THRESHOLD
 	if (error.element_sum() < threshold * random(1.0f, 1.5f)) {
 #else
-	if (error.element_sum() < threshold){
+	if (error.element_sum() < threshold) {
 #endif // RANDOM_THRESHOLD
 		out.push_back(node->reprecentative);
 	}
@@ -216,14 +293,131 @@ void BULightTree::SearchLights(std::vector<PointLight*>& out, LightNode* node, c
 		SearchLights(out, node->ChildA, hit, threshold);
 		SearchLights(out, node->ChildB, hit, threshold);
 	}
+	}
+
+
+void BULightTree::BuildTree(std::unordered_set<LightNode*>& clusters)
+{
+	Graph graph = Graph();
+	KdTree<Vec3f, GraphNode*, 3> kdtree = KdTree<Vec3f, GraphNode*, 3>();
+	graph.nodes.resize(clusters.size());
+
+	// insert all lights in the cluster set.
+	for (LightNode* node : clusters) {
+		graph.nodes.push_back(GraphNode(node));
+	}
+
+	// insert nodes from the graph into the kd tree
+	for (GraphNode& node : graph.nodes) {
+		kdtree.Insert(node.node->reprecentative->position, &node);
+		//std::cout << "Node*: " << &node << std::endl;
+	}
+
+	kdtree.Build();
+
+	{
+		// find the best neighbors to each node
+		for (GraphNode& n1 : graph.nodes) {
+			LightNode* c1 = n1.node;
+			float dist = std::numeric_limits<float>::max();
+			std::vector<KDTreeRecord<Vec3f, GraphNode*>> res = std::vector<KDTreeRecord<Vec3f, GraphNode*>>();
+			kdtree.NNearest(c1->reprecentative->position, &n1, dist, res, N);
+			//std::cout << "closest dist: " << res[0].dist << std::endl;
+			for (int i = 0; i < N; i++) {
+				graph.edges.push(GraphEdge(&n1, res[i].val, distance(n1.node->reprecentative, res[i].val->node->reprecentative)));
+			}
+		}
+	}
+
+	std::cout << "Graph: nodes = " << graph.nodes.size() << ", edges = " << graph.edges.size() << std::endl;
+
+	// map for accelerating distance calculation.
+	//std::unordered_map<std::pair<LightNode*, LightNode*>, float, hash_pair> umap = std::unordered_map<std::pair<LightNode*, LightNode*>, float, hash_pair>();
+
+	while (graph.edges.size() > 1) {
+		//float best = std::numeric_limits<float>::infinity();
+
+		auto edge = graph.edges.top();
+		graph.edges.pop();
+
+		if (edge.n1->is_alive && edge.n2->is_alive) {
+
+			GraphNode* left = edge.n1;
+			GraphNode* right = edge.n2;
+
+			assert(left != nullptr);
+			assert(right != nullptr);
+			assert(right != left);
+
+			clusters.erase(left->node);
+			clusters.erase(right->node);
+
+			LightNode* node = new LightNode();
+			node->type = NodeType::Internal;
+			node->bbox = AABB(left->node->bbox, right->node->bbox);
+			node->ChildA = left->node;
+			node->ChildB = right->node;
+
+			PointLight* leftLight = left->node->reprecentative;
+			PointLight* rightLight = right->node->reprecentative;
+			float sumA = leftLight->color.element_sum();
+			float sumB = rightLight->color.element_sum();
+			float sum = sumA + sumB;
+			float p = sumA / sumB;
+
+			PointLight* light = nullptr;
+			if (random(0, 1) < p) {
+				Vec3f pos = leftLight->position;
+				Vec3f color = leftLight->color + rightLight->color;
+				light = new PointLight(pos, color);
+				ReprecentativeLights.push_back(light);
+				left->node = node;
+				right->is_alive = false;
+				//AdjacencyMatrix.insert(std::make_pair(node, AdjacencyMatrix[left]));
+			}
+			else {
+				Vec3f pos = rightLight->position;
+				Vec3f color = rightLight->color + leftLight->color;
+				light = new PointLight(pos, color);
+				ReprecentativeLights.push_back(light);
+				right->node = node;
+				left->is_alive = false;
+				//AdjacencyMatrix.insert(std::make_pair(node, AdjacencyMatrix[right]));
+			}
+
+			node->reprecentative = light;
+
+			clusters.insert(node);
+
+			//SparseAdjacencyMatrix.remove(left);
+			//SparseAdjacencyMatrix.remove(right);
+
+
+			/*for (auto& neighbor : AdjacencyMatrix[node]) {
+				if (neighbor.val != node) {
+					NodePair _pair = {};
+					_pair.n1 = node;
+					_pair.n2 = neighbor.val;
+					_pair.dist = neighbor.dist;
+					edge_queue.push(_pair);
+				}
+			}*/
+
+
+			//std::cout << "nodes: " << graph.nodes.size() << ", edges: " << graph.edges.size() << std::endl;
+		}
+
+	}
+
+	std::cout << "clusters: " << clusters.size() << std::endl;
 }
 
-float BULightTree::distance(const PointLight* p1, const PointLight* p2)
+float BULightTree::distance(const PointLight * p1, const PointLight * p2)
 {
 	return (p1->position - p2->position).length();
 }
 
-PointLight* BULightTree::MergeLights(PointLight* A, PointLight* B)
+PointLight* BULightTree::MergeLights(PointLight * A, PointLight * B)
 {
 	float sumA = A->color.element_sum();
 	float sumB = B->color.element_sum();
@@ -246,7 +440,7 @@ PointLight* BULightTree::MergeLights(PointLight* A, PointLight* B)
 	return light;
 }
 
-void BULightTree::GetTreeEdgesRecurse(std::vector<Line>& lines, const LightNode* node, Vec3f color) const
+void BULightTree::GetTreeEdgesRecurse(std::vector<Line> & lines, const LightNode * node, Vec3f color) const
 {
 	if (node->type == NodeType::Leaf) {
 		return;
@@ -261,7 +455,7 @@ void BULightTree::GetTreeEdgesRecurse(std::vector<Line>& lines, const LightNode*
 	assert(false);
 }
 
-void BULightTree::deleteNode(LightNode* node)
+void BULightTree::deleteNode(LightNode * node)
 {
 	if (node == nullptr)
 		return;

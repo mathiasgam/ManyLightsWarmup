@@ -82,7 +82,7 @@ public:
 	}
 
 	/// Assignment addition with scalar
-	inline bool operator==(V v)
+	inline bool operator==(const V v) const
 	{
 		for (int i = 0; i < K; i++) {
 			if (data[i] != v[i]) {
