@@ -76,7 +76,7 @@ void prepareScene(Scene* scene) {
 	//scene->AddLight(Vec3f(15, 10, 0), light_color * 100);
 	//scene->AddLight(Vec3f(24, 10, 0), light_color * 100);
 
-	const int num_lights = 100;
+	const int num_lights = 100000;
 
 	Vec3f center = Vec3f(0.0f, 5.0f, 0.0f);
 	Vec3f dim = Vec3f(10.0f, 3.0f, 3.0f);

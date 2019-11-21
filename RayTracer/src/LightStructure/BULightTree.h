@@ -84,7 +84,7 @@ namespace {
 class BULightTree : LightStructure
 {
 private:
-	const int N = 10;
+	const int N = 1;
 
 
 	std::vector<PointLight*> ReprecentativeLights;
