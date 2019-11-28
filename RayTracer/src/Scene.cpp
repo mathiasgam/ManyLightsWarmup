@@ -224,32 +224,68 @@ void Scene::LoadOBJFile(const std::string_view filename, const std::string_view 
 	std::cout << "Loaded file: " << filename << std::endl;
 }
 
-void Scene::LoadScene(const std::string_view filename)
+void Scene::LoadScene(const std::string_view filename, const std::string_view basepath)
 {
-	std::ifstream file(filename.data());
+	std::cout << "Loading scene: \"" << filename << "\", from: \"" << basepath << "\"" << std::endl;
+	std::string fullPath = basepath.data();
+	fullPath += filename.data();
+	std::ifstream file(fullPath);
 	if (!file) {
-		std::cerr << "Could not open file: " << filename << "!";
+		std::cerr << "Could not open file: \"" << filename << "\"!";
 	}
-
-	TriMesh* CurrentMesh = new TriMesh();
-	unsigned int current_material = 0;
-	meshes.push_back(CurrentMesh);
 
 	std::string buf;
 	while (file >> buf) {
 		switch (buf[0])
 		{
-		case 'v':
-			if (buf == "v") {
-				float x, y, z;
-				file >> x >> y >> z;
-				CurrentMesh->geometry.addVertex(Vec3f(x, y, z));
+		case 'N':
+			if (buf == "NAME") {
+				std::string name;
+				file >> name;
+				this->name = name;
+				std::cout << "- Scene name: " << name << std::endl;
 			}
 			else {
 				file.ignore(1024, '\n');
 			}
 			break;
-
+		case 'O':
+			if (buf == "OBJ") {
+				std::string name;
+				file >> name;
+				this->LoadOBJFile(name, basepath);
+			}
+			else {
+				file.ignore(1024, '\n');
+			}
+			break;
+		case 'C':
+			if (buf == "CAMPOS") {
+				float x, y, z;
+				file >> x >> y >> z;
+				this->cam.SetPosition(Vec3f(x, y, z));
+				std::cout << "- Camera position: " << Vec3f(x, y, z) << std::endl;
+			}
+			else if (buf == "CAMLOOK") {
+				float x, y, z;
+				file >> x >> y >> z;
+				this->cam.LookAt(Vec3f(x, y, z));
+				std::cout << "- Camera looking at: " << Vec3f(x, y, z) << std::endl;
+			}
+			else {
+				file.ignore(1024, '\n');
+			}
+			break;
+		case 'S':
+			if (buf == "STRUC") {
+				float t;
+				file >> t;
+				this->threshold = t;
+				std::cout << "Threshold: " << t << std::endl;
+			}
+			else {
+				file.ignore(1024, '\n');
+			}
 		default:
 			file.ignore(1024, '\n');
 			break;

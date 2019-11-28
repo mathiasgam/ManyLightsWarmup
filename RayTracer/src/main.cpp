@@ -60,11 +60,11 @@ void prepareScene(Scene* scene) {
 	// add some models to the scene
 	//scene->AddMesh("../models/sponza.obj", color(196, 160, 106), Vec3f(0, 0, 0));
 	//scene->AddMesh("../models/buddha.obj", color(122, 10, 2), Vec3f(-1.0f, 0.3f, 0.0f));
-	scene->LoadOBJFile("dragon.obj", "../models/");
+	//scene->LoadOBJFile("dragon.obj", "../models/");
 	//scene->AddMesh("../models/bunny.obj", color(122, 75, 39), Vec3f(1.0f, -0.3f, 1.0f));
 	//scene->AddMesh("../models/TestScene.obj", color(90, 90, 90), Vec3f(0.0f));
 	//scene->AddPlane(Vec3f(0, 0, 0), color(92, 85, 74), Vec3f(0, 1, 0));
-	scene->LoadOBJFile("SponzaMaterialTest.obj", "../models/");
+	//scene->LoadOBJFile("SponzaMaterialTest.obj", "../models/");
 
 	//scene->AddLight(Vec3f(20, 2, 2), Vec3f(0, 0, 50));
 	const Vec3f light_color = color(255, 241, 224);
@@ -194,31 +194,33 @@ int main() {
 
 	//exit(0);
 
-	const unsigned int width = 1080;
-	const unsigned int height = 720;
-	float aspect = (float)width / (float)height;
-	Vec2f pixel_dim = Vec2f(1.0f / width, 1.0f / height);
-	std::cout << "Width: " << width << ", Height: " << height << ", Aspect: " << aspect << std::endl;
-
-	// create the camera
-	PinHoleCamera cam = PinHoleCamera();
-	//cam.SetPosition(Vec3f(-2.5f, 1.0f, 0.0f));
-	//cam.SetPosition(Vec3f(-2.0f, 2.0f, 3.0f));
-	//cam.SetPosition(Vec3f(-20.0f, 10.0f, 10.0f));
-	//cam.SetPosition(Vec3f(-8.0f, 1.0f, 10.0f));
-
-	cam.SetPosition(Vec3f(10.0f, 1.7f, 0.0f)); // sponza
-	cam.LookAt(Vec3f(0.0f, 0.5f, 0.5f));
 
 	//cam.SetPosition(Vec3f(10.0f, 1.0f, -4.0f)); // sponza side
 	//cam.LookAt(Vec3f(0.0f, 0.5f, -4.5f));
 
 	// scene added as pointer, for easier access over multiple threads
 	Scene* scene = new Scene();
+	scene->LoadScene("Sponza.scene", "../models/");
 	prepareScene(scene);
 
+	// create the camera
+	const PinHoleCamera& cam = scene->GetCamera();
+	//cam.SetPosition(Vec3f(-2.5f, 1.0f, 0.0f));
+	//cam.SetPosition(Vec3f(-2.0f, 2.0f, 3.0f));
+	//cam.SetPosition(Vec3f(-20.0f, 10.0f, 10.0f));
+	//cam.SetPosition(Vec3f(-8.0f, 1.0f, 10.0f));
+
+	//cam.SetPosition(Vec3f(10.0f, 1.7f, 0.0f)); // sponza
+	//cam.LookAt(Vec3f(0.0f, 0.5f, 0.5f));
+
 	RayTracer* tracer = new RayTracer(scene);
-	tracer->SetLightThreshold(0.02f);
+	tracer->SetLightThreshold(scene->GetThreshold());
+
+	const unsigned int width = 1080;
+	const unsigned int height = 720;
+	float aspect = (float)width / (float)height;
+	Vec2f pixel_dim = Vec2f(1.0f / width, 1.0f / height);
+	std::cout << "Width: " << width << ", Height: " << height << ", Aspect: " << aspect << std::endl;
 
 	// start timing
 	double start;

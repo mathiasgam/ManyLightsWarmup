@@ -12,6 +12,7 @@
 #include "PointLight.h"
 #include "OBJModel.h"
 #include "Material.h"
+#include "Camera/PinHoleCamera.h"
 
 #include "Structure/Structure.h"
 #include "Structure/LBVHStructure.h"
@@ -25,6 +26,7 @@ class Scene
 {
 private:
 
+	std::string name;
 	std::vector<const Material*> materials;
 
 	std::vector<OBJModel*> models;
@@ -43,17 +45,20 @@ private:
 #else
 	LightArray BVHLights;
 #endif
+	float threshold = 0.02f;
 
 	//LightTree BVHLights;
 
 	Vec3f ambient = Vec3f(0.1f, 0.1f, 0.1f);
+
+	PinHoleCamera cam = PinHoleCamera();
 
 public: /// Public variables
 	const Vec3f background_color = Vec3f(0.1f, 0.2f, 0.15f);
 	const float scene_epsilon = 0.0001f;
 
 public: /// Public Functions
-	Scene() : materials(0), meshes(0), planes(0), lights(0), visuals(0), BVHMesh(), BVHVisuals(), BVHLights() {
+	Scene() : name("default"), materials(0), meshes(0), planes(0), lights(0), visuals(0), BVHMesh(), BVHVisuals(), BVHLights() {
 		Material* default_material = new Material();
 		materials.push_back(default_material);
 	}
@@ -69,12 +74,14 @@ public: /// Public Functions
 	void LoadMTL(const std::string_view filename, const std::string_view basepath);
 	void LoadOBJFile(const std::string_view filename, const std::string_view basepath);
 
-	void LoadScene(const std::string_view filename);
+	void LoadScene(const std::string_view filename, const std::string_view basepath);
 
 	unsigned int GetNumModels() const { return static_cast<unsigned int>(models.size()); }
 	unsigned int GetNumMeshes() const { return static_cast<unsigned int>(meshes.size()); }
 	unsigned int GetNumLights() const { return static_cast<unsigned int>(lights.size()); }
 	unsigned int GetNumPlanes() const { return static_cast<unsigned int>(planes.size()); }
+	float GetThreshold() const { return threshold; }
+	const PinHoleCamera& GetCamera() const { return cam; }
 
 	const Material* GetMaterial(unsigned int index) const { return materials[index]; }
 
