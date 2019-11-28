@@ -60,3 +60,15 @@ inline float CosineBound(const Vec3f& position, const Vec3f& normal, const AABB&
 	
 }
 
+inline float minSqrDist(const Vec3f& position, const AABB& bbox) {
+
+	Vec3f d = max(bbox.p_min - position, Vec3f(0.0f));
+	d = max(d, position - bbox.p_max);
+	return d.sqr_length();
+	//Vec3f diff = bbox.center() - position;
+	//diff = abs(diff) - (bbox.size() / 2.0f);
+	//diff = max(diff, Vec3f(0.0f));
+	//return (diff).sqr_length();
+
+}
+

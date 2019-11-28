@@ -281,7 +281,7 @@ void Scene::LoadScene(const std::string_view filename, const std::string_view ba
 				float t;
 				file >> t;
 				this->threshold = t;
-				std::cout << "Threshold: " << t << std::endl;
+				std::cout << "- Threshold: " << t << std::endl;
 			}
 			else {
 				file.ignore(1024, '\n');

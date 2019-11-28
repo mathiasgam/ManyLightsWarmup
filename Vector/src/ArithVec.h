@@ -381,4 +381,8 @@ inline int fast_log2(int x) {
 	return 8 * sizeof(int) - clz(static_cast<uint32_t>(x)) - 1;
 }
 
+inline float sqr(float f) {
+	return f * f;
+}
+
 #endif // !ARITH_VEC_H
