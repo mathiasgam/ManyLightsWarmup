@@ -1,0 +1,7 @@
+NAME SponzaTest
+OBJ SponzaMaterialTest.obj
+LIGHT SponzaMaterialTest.light
+CAMPOS 10.0 1.7 0.0
+CAMLOOK 0.0 0.5 0.5
+STRUC 0.02
+DIM 1080 720

@@ -1,0 +1,7 @@
+# Test scene
+
+OBJ MaterialTest.obj
+
+CP -8.00 1.00 10.00
+CL 0.0 0.5 0.5
+
