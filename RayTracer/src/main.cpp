@@ -76,7 +76,7 @@ void prepareScene(Scene* scene) {
 	//scene->AddLight(Vec3f(15, 10, 0), light_color * 100);
 	//scene->AddLight(Vec3f(24, 10, 0), light_color * 100);
 
-	const int num_lights = 1000;
+	const int num_lights = 10000;
 
 	Vec3f center = Vec3f(0.0f, 5.0f, 0.0f);
 	Vec3f dim = Vec3f(10.0f, 3.0f, 3.0f);
@@ -275,8 +275,9 @@ int main() {
 						if (index >= max)
 							break;
 
-						if ((index + 1) % (max / 10) == 0)
-							std::cout << ".";
+						if (index % (max / 10) == 0) {
+							std::cout << (index * 100.0f) / max << "%" << std::endl;
+						}
 
 						const unsigned int i = index % width;
 						const unsigned int j = index / width;
@@ -322,6 +323,8 @@ int main() {
 		report_final.num_occlusion_rays += report_tmp.num_occlusion_rays;
 		report_final.num_lights += report_tmp.num_lights;
 	}
+
+	std::cout << "Complete" << std::endl;
 
 	std::cout << std::endl;
 

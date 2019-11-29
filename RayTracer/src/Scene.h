@@ -41,7 +41,8 @@ private:
 	LBVHStructure BVHVisuals;
 
 #if USE_LIGHT_TREE
-	BULightTree BVHLights;
+	LightTree BVHLights;
+	//BULightTree BVHLights;
 #else
 	LightArray BVHLights;
 #endif

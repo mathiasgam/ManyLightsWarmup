@@ -13,9 +13,14 @@ Vec3f RayTracer::SampleLights(const HitInfo& hit, const Vec3f& material, int& nu
 		float dist = dir.length();
 		dir = dir.normalized();
 
+		Vec3f material_term = material;// *max(0.0f, dot(-hit.normal, hit.incomming));
+
+		if (material_term.element_sum() == 0.0f)
+			continue;
+
 		Ray shadow = Ray(hit.position, dir, epsilon, dist - epsilon);
 		if (!Occluded(shadow)) {
-			res += material * (light->color / (dist * dist)) * max(dot(hit.normal, dir), 0.0f);
+			res += material_term * (light->color / (dist * dist)) * max(dot(hit.normal, dir), 0.0f);
 		}
 
 		numLights++;

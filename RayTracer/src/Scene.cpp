@@ -303,14 +303,14 @@ void Scene::prepare()
 	BVHLights.init(lights);
 
 	for (PointLight* light : lights) {
-		AddPoint(light->position, 0.05f);
+		AddPoint(light->position, 0.01f);
 	}
 
 #if USE_LIGHT_TREE
 	float sum_length = 0;
 	unsigned int edges = 0;
 	for (Line& line : BVHLights.GetTreeEdges()) {
-		AddLine(line.p1, line.p2, 0.01f, line.color);
+		AddLine(line.p1, line.p2, 0.002f, line.color);
 		edges++;
 		sum_length += (line.p1 - line.p2).length();
 	}

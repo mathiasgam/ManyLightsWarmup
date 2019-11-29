@@ -91,9 +91,48 @@ void BULightTree::init(std::vector<PointLight*> lights)
 std::vector<PointLight*> BULightTree::GetLights(const HitInfo& hit, float threshold) const
 {
 	std::vector<PointLight*> lights = std::vector<PointLight*>();
-	for (auto c : light_forest)
-		SearchLights(lights, c, hit, threshold);
+	Vec3f total_radiance = Vec3f(0.0f);
+	std::priority_queue<NodeCut, std::vector<NodeCut>, NodeCutCompare> queue = std::priority_queue<NodeCut, std::vector<NodeCut>, NodeCutCompare>();
 
+	// push the root node to the queue
+	for (LightNode* n : light_forest) {
+		NodeCut root = CreateNodeCut(n, hit);
+		queue.push(root);
+		total_radiance += root.radiance;
+	}
+
+	while (queue.size() < 1000) {
+		NodeCut cut = queue.top();
+
+		//std::cout << "Error: " << cut.error << std::endl;
+
+		if ((cut.error - total_radiance * threshold * random(0.9f,1.1)).max_componont() > 0.0f) {
+			queue.pop();
+			total_radiance -= cut.radiance;
+
+			NodeCut A = CreateNodeCut(cut.node->ChildA, hit);
+			NodeCut B = CreateNodeCut(cut.node->ChildB, hit);
+			total_radiance += A.radiance + B.radiance;
+
+			//std::cout << "Prev error: " << cut.errorsum << ", new error: " << A.errorsum + B.errorsum << std::endl;
+
+			queue.push(A);
+			queue.push(B);
+		}
+		else {
+			// if the worst error is less than the permitted error, theres no reason to refine more clusters
+			//std::cout << "threshold reached: " << cut.errorsum << std::endl;
+			break;
+		}
+
+	}
+	size_t N = queue.size();
+	lights.resize(N);
+	//std::cout << "Num lights: " << N << ", max error: " << queue.top().errorsum << std::endl;
+	for (int i = 0; i < N; i++) {
+		lights[i] = queue.top().node->reprecentative;
+		queue.pop();
+	}
 
 	return lights;
 }
@@ -106,71 +145,31 @@ std::vector<Line> BULightTree::GetTreeEdges() const
 	return lines;
 }
 
-void BULightTree::SearchLights(std::vector<PointLight*>& out, LightNode* node, const HitInfo& hit, float threshold) const
-{
-	if (node->type == NodeType::Leaf) {
-		out.push_back(node->reprecentative);
-		return;
+/*
+Vec3f GetErrorBound(const LightNode& node, const HitInfo& hit, const Vec3f& material_term, const Vec3f& radiance) {
+	if (node.type == NodeType::Leaf) {
+		return Vec3f(0.0f);
 	}
-	/*
-	// Test if the bounding box is behind the surface.
-	Vec3f t1 = (node->bbox.p_min - hit.position) / hit.normal;
-	Vec3f t2 = (node->bbox.p_max - hit.position) / hit.normal;
-	if (max(t1, t2).max_componont() < 0.0f)
-		return;
-	*/
-	if (node->bbox.contained(hit.position)) {
-		SearchLights(out, node->ChildA, hit, threshold);
-		SearchLights(out, node->ChildB, hit, threshold);
-		return;
+	const float min_sqr_dist = minSqrDist(hit.position, node.bbox);
+	if (min_sqr_dist <= 0.0f) {
+		//std::cout << "min dist fail: " << min_sqr_dist << std::endl;
+		return Vec3f(1000.0f);
 	}
+	const float cos_theta_bound = CosineBound(hit.position, hit.normal, node.bbox);
+	const Vec3f worst = (node.reprecentative->color / min_sqr_dist) * material_term;
 
-	const float cos_theta_bound = CosineBound(hit.position, hit.normal, node->bbox);
-	if (cos_theta_bound <= 0.0f) {
-		return;
-	}
+	return abs(radiance - worst);
+}
 
-	if (cos_theta_bound > 1.0001f) {
-		std::cout << "COS_THETA_BOUND: " << cos_theta_bound << ", FAILED!!!" << std::endl;
-	}
-
-
-	Vec3f dir = hit.position - node->reprecentative->position;
-	const float dist = dir.length();
-	dir /= dist;
-	const float radius = (node->bbox.p_max - node->bbox.p_min).length() / 2.0f;
-
-	const float min_dist = dist - radius;
-
-	if (min_dist <= 0) {
-		SearchLights(out, node->ChildA, hit, threshold);
-		SearchLights(out, node->ChildB, hit, threshold);
-		return;
-	}
-
-	// Geometric term
-	//float G = 1.0f / (dist * dist);
+Vec3f GetRadiance(const LightNode& node, const HitInfo& hit, const Vec3f& material_term) {
+	const Vec3f diff = hit.position - node.reprecentative->position;
+	const float sqr_dist = diff.sqr_length();
+	return (node.reprecentative->color / sqr_dist) * material_term;
+}
+*/
 
 
-	const Vec3f intensity = node->reprecentative->color * hit.p_material->diffuse * cos_theta_bound;
-	const Vec3f rep = intensity / (dist * dist);
-	const Vec3f worst = intensity / (min_dist * min_dist);
 
-	const Vec3f error = abs(rep - worst);
-
-	// add a random value to the threshold to remove artefacts
-#if RANDOM_THRESHOLD
-	if (error.element_sum() < threshold * random(1.0f, 1.5f)) {
-#else
-	if (error.element_sum() < threshold) {
-#endif // RANDOM_THRESHOLD
-		out.push_back(node->reprecentative);
-	}
-	else {
-		SearchLights(out, node->ChildA, hit, threshold);
-		SearchLights(out, node->ChildB, hit, threshold);
-	}
-	}
 
 
 void BULightTree::BuildTree(std::unordered_set<LightNode*>& clusters)
@@ -289,12 +288,12 @@ void BULightTree::BuildTree(std::unordered_set<LightNode*>& clusters)
 	std::cout << "clusters: " << clusters.size() << std::endl;
 }
 
-float BULightTree::distance(const PointLight * p1, const PointLight * p2)
+float BULightTree::distance(const PointLight* p1, const PointLight* p2)
 {
 	return (p1->position - p2->position).length();
 }
 
-PointLight* BULightTree::MergeLights(PointLight * A, PointLight * B)
+PointLight* BULightTree::MergeLights(PointLight* A, PointLight* B)
 {
 	float sumA = A->color.element_sum();
 	float sumB = B->color.element_sum();
@@ -317,7 +316,7 @@ PointLight* BULightTree::MergeLights(PointLight * A, PointLight * B)
 	return light;
 }
 
-void BULightTree::GetTreeEdgesRecurse(std::vector<Line> & lines, const LightNode * node, Vec3f color) const
+void BULightTree::GetTreeEdgesRecurse(std::vector<Line>& lines, const LightNode* node, Vec3f color) const
 {
 	if (node->type == NodeType::Leaf) {
 		return;
@@ -332,7 +331,7 @@ void BULightTree::GetTreeEdgesRecurse(std::vector<Line> & lines, const LightNode
 	assert(false);
 }
 
-void BULightTree::deleteNode(LightNode * node)
+void BULightTree::deleteNode(LightNode* node)
 {
 	if (node == nullptr)
 		return;
