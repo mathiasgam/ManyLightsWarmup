@@ -2,7 +2,8 @@
 #include "Sampling.h"
 #include "Vec3f.h"
 
-// #define SAMPLE
+#include "config.h"
+
 
 Vec3f RayTracer::SampleLights(const HitInfo& hit, const Vec3f& material, int& numLights, const float threshold) const {
 	Vec3f res = Vec3f(0.0f);
@@ -13,14 +14,14 @@ Vec3f RayTracer::SampleLights(const HitInfo& hit, const Vec3f& material, int& nu
 		float dist = dir.length();
 		dir = dir.normalized();
 
-		Vec3f material_term = material;// *max(0.0f, dot(-hit.normal, hit.incomming));
+		Vec3f material_term = hit.p_material->diffuse * max(0.0f, dot(hit.normal, dir));
 
 		if (material_term.element_sum() == 0.0f)
 			continue;
 
 		Ray shadow = Ray(hit.position, dir, epsilon, dist - epsilon);
 		if (!Occluded(shadow)) {
-			res += material_term * (light->color / (dist * dist)) * max(dot(hit.normal, dir), 0.0f);
+			res += material_term * (light->color / (dist * dist));
 		}
 
 		numLights++;
@@ -40,7 +41,7 @@ TraceResult RayTracer::trace(Ray ray)
 
 	const float epsilon = p_scene->scene_epsilon;
 
-	const int samples = 5;
+	const int samples = 10;
 
 	HitInfo visualInfo = HitInfo();
 	if (p_scene->trace_visuals(Ray(ray), visualInfo)) {
@@ -65,7 +66,7 @@ TraceResult RayTracer::trace(Ray ray)
 			rotate_to_normal(normal, sample_dir);
 
 			Ray sample_ray = Ray(hit.position, sample_dir, epsilon, 10000);
-			result.color += material->diffuse * sample(sample_ray, 2) * sample_factor;
+			result.color += material->diffuse * sample(sample_ray, 1) * sample_factor;
 		}
 
 #endif // SAMPLE
@@ -103,23 +104,25 @@ Vec3f RayTracer::sample(Ray ray, int bounces) const
 	int light_count = 0;
 
 	if (p_scene->closest_hit(ray, hit)) {
+
+		const Material* material = p_scene->GetMaterial(hit.material_index);
+		hit.p_material = material;
+
 		Vec3f normal = hit.normal.normalized();
 		if (dot(normal, ray.direction) > 0)
 			normal = -normal;
 
-		const Material* material = p_scene->GetMaterial(hit.material_index);
-
+		res += SampleLights(hit, hit.p_material->diffuse, light_count, LightThreshold);
+		/*
 		if (bounces > 0) {
 			Vec3f sample_dir = SampleCosineSphere();
 			rotate_to_normal(normal, sample_dir);
 
 			Ray sample_ray = Ray(hit.position, sample_dir, epsilon, 10000);
-			res += material->diffuse * sample(sample_ray, --bounces);
+			res += hit.p_material->diffuse * sample(sample_ray, --bounces);
 		}
+		*/
 
-		res += SampleLights(hit, material->diffuse, light_count, LightThreshold * 10.0f);
-		//res += hit.color * p_scene->GetAmbient(hit.position);
-		//res = res / (hit.t * hit.t);
 	}
 
 	return res;

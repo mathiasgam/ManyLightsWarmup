@@ -154,7 +154,9 @@ void Scene::LoadOBJFile(const std::string_view filename, const std::string_view 
 		std::cerr << "Could not open file: " << filename << "!";
 	}
 
-	TriMesh* CurrentMesh = nullptr;
+	//TriMesh* CurrentMesh = nullptr;
+	TriMesh* CurrentMesh = new TriMesh();
+	meshes.push_back(CurrentMesh);
 	unsigned int current_material = 0;
 
 	std::string buf;
@@ -213,8 +215,8 @@ void Scene::LoadOBJFile(const std::string_view filename, const std::string_view 
 				std::string name;
 				file >> name;
 				std::cout << "Creating new mesh: " << name << std::endl;
-				CurrentMesh = new TriMesh();
-				meshes.push_back(CurrentMesh);
+				//CurrentMesh = new TriMesh();
+				//meshes.push_back(CurrentMesh);
 			}
 		default:
 			file.ignore(1024, '\n');

@@ -1,0 +1,7 @@
+NAME CubesTest
+OBJ Cubes.obj
+LIGHT dragon.light
+CAMPOS 4.0 1.0 0.0
+CAMLOOK 0.0 1.0 0.0
+STRUC 0.02
+DIM 1080 720

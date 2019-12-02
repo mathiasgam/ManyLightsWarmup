@@ -1,0 +1,7 @@
+NAME DragonTest
+OBJ figures.obj
+LIGHT dragon.light
+CAMPOS -4.0 1.0 -1.5
+CAMLOOK 0.0 1.0 0.5
+STRUC 0.02
+DIM 1080 720

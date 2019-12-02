@@ -47,7 +47,7 @@
 void addLightCluster(Scene* scene, Vec3f center, Vec3f dim, Vec3f color, unsigned int N) {
 	for (unsigned int i = 0; i < N; i++) {
 		Vec3f pos = random(center - dim, center + dim);
-		scene->AddLight(pos, Vec3f(random(0.1f, 1.0f), random(0.1f, 1.0f), random(0.1f, 1.0f)).normalized() * color / static_cast<float>(N));
+		scene->AddLight(pos, color / static_cast<float>(N));
 	}
 }
 
@@ -71,20 +71,46 @@ void prepareScene(Scene* scene) {
 
 	scene->SetAmbient(Vec3f(0.2f));
 
-	const float intensity = 300.0f;
+	const float intensity = 500.0f;
 	//scene->AddLight(Vec3f(16.0f, 5.0f, 6.0f), light_color * 100);
 	//scene->AddLight(Vec3f(15, 10, 0), light_color * 100);
 	//scene->AddLight(Vec3f(24, 10, 0), light_color * 100);
 
-	const int num_lights = 10000;
-
-	Vec3f center = Vec3f(0.0f, 5.0f, 0.0f);
-	Vec3f dim = Vec3f(10.0f, 3.0f, 3.0f);
-	for (int i = 0; i < 100; i++) {
+	const int clusters = 5;
+	const int per_cluster = 100;
+	const int num_lights = clusters * per_cluster;
+	
+	
+	Vec3f center = Vec3f(0.0f, 5.0f, -1.0f);
+	Vec3f dim = Vec3f(8.0f, 1.0f, 1.0f);
+	for (int i = 0; i < clusters; i++) {
 		Vec3f pos = random(center - dim, center + dim);
 		Vec3f color = Vec3f(random(0.1f, 1.0f), random(0.1f, 1.0f), random(0.1f, 1.0f)).normalized();
-		addLightCluster(scene, random(center - dim, center + dim), Vec3f(2.0f), intensity / 100, num_lights / 100);
+		addLightCluster(scene, random(center - dim, center + dim), Vec3f(0.2f), color * intensity / clusters, per_cluster);
 	}
+	
+	/*
+	Vec3f center = Vec3f(0.0f, 3.0f, -1.0f);
+	Vec3f dim = Vec3f(8.0f, 2.0f, 1.0f);
+	for (int i = 0; i < num_lights; i++) {
+		Vec3f pos = random(center - dim, center + dim);
+		Vec3f color = Vec3f(random(0.1f, 1.0f), random(0.1f, 1.0f), random(0.1f, 1.0f)).normalized();
+		scene->AddLight(pos, light_color * intensity / num_lights);
+	}
+	*/
+
+	/*
+	for (int i = 0; i < 10; i++) {
+		for (int j = 0; j < 10; j++) {
+			float x = (1.0f / 10.0f) * i - 0.5f;
+			float y = (1.0f / 10.0f) * j + 0.5f;
+			float z = 0.99f;
+			scene->AddLight(Vec3f(x, y, z), (light_color * intensity) / (10*10));
+		}
+	}
+	*/
+
+
 
 	//addLightCluster(scene, Vec3f(0.0f, 1.0f, 0.0f), Vec3f(10.0f,0.5f,10.0f), light_color * intensity, num_lights);
 	//addLightCluster(scene, Vec3f(10, 5, 0), Vec3f(2,1,2), light_color * intensity, num_lights * 0.2);
@@ -95,7 +121,7 @@ int main() {
 
 	// set the seed for the standard random function with constant value for comparable results across multiple runs
 	srand(42);
-
+	/*
 	KdTree<Vec3f, std::string, 3> kdtree = KdTree<Vec3f, std::string, 3>();
 
 	kdtree.Insert(Vec3f(0, 0, 0), "blue");
@@ -165,6 +191,7 @@ int main() {
 	for (auto s : res) {
 		std::cout << "Value: " << s.val << ", dist: " << s.dist << std::endl;
 	}
+	*/
 
 	//exit(0);
 	/*
@@ -200,7 +227,8 @@ int main() {
 
 	// scene added as pointer, for easier access over multiple threads
 	Scene* scene = new Scene();
-	scene->LoadScene("Sponza.scene", "../models/");
+	//scene->LoadScene("Sponza.scene", "../models/");
+	scene->LoadScene("SponzaHallway.scene", "../models/");
 	prepareScene(scene);
 
 	// create the camera

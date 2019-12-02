@@ -105,8 +105,11 @@ std::vector<PointLight*> BULightTree::GetLights(const HitInfo& hit, float thresh
 		NodeCut cut = queue.top();
 
 		//std::cout << "Error: " << cut.error << std::endl;
-
+#if RANDOM_THRESHOLD
 		if ((cut.error - total_radiance * threshold * random(0.9f,1.1)).max_componont() > 0.0f) {
+#else
+		if ((cut.error - total_radiance * threshold).max_componont() > 0.0f) {
+#endif
 			queue.pop();
 			total_radiance -= cut.radiance;
 
