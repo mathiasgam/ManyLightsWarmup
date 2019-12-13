@@ -4,8 +4,11 @@
 #include <unordered_set>
 #include <queue>
 #include <algorithm>
+#include <execution>
 
 #include "Vec3f.h"
+#include "ZOrderIndex.h"
+#include "MortonCode.h"
 
 #define ROOT_INDEX 1
 
@@ -134,6 +137,9 @@ public:
 	//void remove(const T*);
 	void Build();
 
+	/// Same functionallity as Build(), but is using Z-Order curve to sort primitives
+	void BuildZOrder();
+
 	//const T* Nearest(const T*) const;
 
 	unsigned int Size() const;
@@ -147,6 +153,7 @@ public:
 private:
 
 	void BuildRecurse(const unsigned int in_current, const unsigned int in_begin, const unsigned int in_end);
+	void BuildRecurseZOrder(const unsigned int in_current, const unsigned int in_begin, const unsigned int in_end);
 	/// will return the index of the nearest node in the tree within the distance 'dist', if present. 
 	unsigned int NearestRecurse(const unsigned int in_node, const KeyT& in_key, float& in_out_dist) const;
 	void NNearestRecurse(const unsigned int in_node, const KeyT& in_key, const ValT& in_val, float& in_out_dist, NQueue<KDTreeRecord<KeyT, ValT>>& out_queue) const;
@@ -267,7 +274,7 @@ inline void KdTree<KeyT, ValT, K>::Insert(const KeyT& in_key, const ValT& in_val
 		std::vector<KdNode> v(1);
 		keys.swap(v);
 	}
-	keys.push_back(KdNode(in_key, in_val));
+	keys.emplace_back(in_key, in_val);
 }
 
 template<class KeyT, class ValT, unsigned int K>
@@ -286,6 +293,55 @@ inline void KdTree<KeyT, ValT, K>::Build()
 {
 	nodes.resize(keys.size());
 	BuildRecurse(1, 1, static_cast<unsigned int>(nodes.size()));
+	std::vector<KdNode> v(1);
+	keys.swap(v);
+	isBuild = true;
+}
+
+template<class KeyT, class ValT, unsigned int K>
+inline void KdTree<KeyT, ValT, K>::BuildZOrder()
+{
+	const size_t N = keys.size();
+
+	AABB bbox = AABB();
+
+	for (auto& k : keys) {
+		bbox.add_point(k.key);
+	}
+
+	Vec3f diff = bbox.size();
+
+	struct ZOrderNode {
+		ZOrderIndex key;
+		KdNode val;
+		inline bool operator< (const ZOrderNode& other) {
+			return key < other.key;
+		}
+	};
+
+	std::vector<ZOrderNode> build_nodes = std::vector<ZOrderNode>();
+	build_nodes.resize(N);
+
+	for (int i = 0; i < N; i++) {
+		build_nodes[i].key = ZOrderIndex((keys[i].key - bbox.p_min) / diff);
+		build_nodes[i].val = keys[i];
+	}
+
+	//std::cout << "Sorting primitives" << std::endl;
+	std::sort(std::execution::par_unseq, build_nodes.begin() + 1, build_nodes.end());
+
+	for (int i = 0; i < N; i++) {
+		//std::cout << build_nodes[i].val.key << std::endl;
+		keys[i] = build_nodes[i].val;
+	}
+
+	std::cout << keys[1].key << std::endl;
+	std::cout << keys[N-1].key << std::endl;
+
+	nodes.resize(N);
+
+	//std::cout << "Building Hierachie" << std::endl;
+	BuildRecurseZOrder(1, 1, N);
 	std::vector<KdNode> v(1);
 	keys.swap(v);
 	isBuild = true;
@@ -360,6 +416,74 @@ inline void KdTree<KeyT, ValT, K>::BuildRecurse(const unsigned int in_current, c
 
 	if (right_size > 0)
 		BuildRecurse(in_current * 2 + 1, median + 1, in_end);
+}
+
+template<class KeyT, class ValT, unsigned int K>
+inline void KdTree<KeyT, ValT, K>::BuildRecurseZOrder(const unsigned int in_current, const unsigned int in_begin, const unsigned int in_end)
+{
+	assert(in_begin <= in_end); // cannot use negative ranges
+	const unsigned int N = in_end - in_begin;
+
+	if (N == 1) {
+		nodes[in_current] = keys[in_begin];
+		nodes[in_current].axis = -1;
+		return;
+	}
+
+	Vec3f diff = keys[in_end].key - keys[in_begin].key;
+
+	// find the best axis to sort split the elements on
+	short axis = diff.max_axis();
+	const unsigned int M = 1 << fast_log2(N);
+	const unsigned int R = N - (M - 1);
+	unsigned int left_size = (M - 2) / 2;
+	unsigned int right_size = (M - 2) / 2;
+	if (R < M / 2) {
+		left_size += R;
+	}
+	else {
+		left_size += M / 2;
+		right_size += R - M / 2;
+	}
+
+	// find median
+	unsigned int median = in_begin + left_size;
+	//std::cout << median << std::endl;
+
+	axis = keys[median].key.max_axis();
+
+	// sort the keys according to the axis
+	KdNode* data = keys.data();
+	//std::nth_element(data + in_begin, data + median, data + in_end, axisCompare[axis]);
+
+	
+	std::cout << "[" << keys[in_begin].key << ", " << keys[median].key << ", " << keys[in_end-1].key << " ], axis: " << axis << std::endl;
+
+	for (int i = in_begin; i < median; i++) {
+		std::cout << keys[i].key[axis] << ", " << keys[median].key[axis] << ", " << (keys[i].key[axis] < keys[median].key[axis]) << std::endl;
+	}
+
+	std::cout << "#########################" << std::endl;
+
+	for (int i = median + 1; i < in_end; i++) {
+		std::cout << keys[i].key[axis] << ", " << keys[median].key[axis] << ", " << (keys[i].key[axis] > keys[median].key[axis]) << std::endl;
+	}
+	
+	
+	assert(std::all_of(data + in_begin, data + median, [=](auto& node) { return node.key[axis] <= keys[median].key[axis]; }));
+	assert(std::all_of(data + median + 1, data + in_end, [=](auto& node) { return node.key[axis] >= keys[median].key[axis]; }));
+
+	//std::cout << in_current << std::endl;
+	// insert node in the trace tree
+	nodes[in_current] = keys[median];
+	nodes[in_current].axis = axis;
+
+	// recursively build left and right subtree
+	if (left_size > 0)
+		BuildRecurseZOrder(in_current * 2, in_begin, median);
+
+	if (right_size > 0)
+		BuildRecurseZOrder(in_current * 2 + 1, median + 1, in_end);
 }
 
 template<class KeyT, class ValT, unsigned int K>
@@ -544,3 +668,5 @@ inline unsigned int KdTree<KeyT, ValT, K>::FindRecurse(const unsigned int in_nod
 	}
 	return 0;
 }
+
+

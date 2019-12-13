@@ -18,9 +18,9 @@ workspace "ManyLights"
       	vectorextensions "AVX2"
   		--defines "/arch:AVX2"
 
-    filter "configurations:Dist"
-      defines { "NDEBUG" }
-      optimize "On"
+	filter "configurations:Dist"
+		defines { "NDEBUG" }
+		optimize "On"
 
       filter "action:vs*"
   		buildoptions { "/Ox", "/Oi", "/Ot", "/GL" }

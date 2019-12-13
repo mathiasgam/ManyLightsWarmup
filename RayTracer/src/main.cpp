@@ -43,6 +43,7 @@
 #include "Sampling.h"
 
 #include "KdTree.h"
+#include "ZOrderIndex.h"
 
 void addLightCluster(Scene* scene, Vec3f center, Vec3f dim, Vec3f color, unsigned int N) {
 	for (unsigned int i = 0; i < N; i++) {
@@ -71,16 +72,16 @@ void prepareScene(Scene* scene) {
 
 	scene->SetAmbient(Vec3f(0.2f));
 
-	const float intensity = 500.0f;
+	const float intensity = 100.0f;
 	//scene->AddLight(Vec3f(16.0f, 5.0f, 6.0f), light_color * 100);
 	//scene->AddLight(Vec3f(15, 10, 0), light_color * 100);
 	//scene->AddLight(Vec3f(24, 10, 0), light_color * 100);
 
-	const int clusters = 5;
-	const int per_cluster = 100;
+	const int clusters = 1;
+	const int per_cluster = 1000;
 	const int num_lights = clusters * per_cluster;
 	
-	
+	/*
 	Vec3f center = Vec3f(0.0f, 5.0f, -1.0f);
 	Vec3f dim = Vec3f(8.0f, 1.0f, 1.0f);
 	for (int i = 0; i < clusters; i++) {
@@ -88,16 +89,17 @@ void prepareScene(Scene* scene) {
 		Vec3f color = Vec3f(random(0.1f, 1.0f), random(0.1f, 1.0f), random(0.1f, 1.0f)).normalized();
 		addLightCluster(scene, random(center - dim, center + dim), Vec3f(0.2f), color * intensity / clusters, per_cluster);
 	}
+	*/
 	
-	/*
-	Vec3f center = Vec3f(0.0f, 3.0f, -1.0f);
-	Vec3f dim = Vec3f(8.0f, 2.0f, 1.0f);
+	
+	Vec3f center = Vec3f(0.0f, 3.0f, 0.0f);
+	Vec3f dim = Vec3f(8.0f, 2.0f, 1.5f);
 	for (int i = 0; i < num_lights; i++) {
 		Vec3f pos = random(center - dim, center + dim);
 		Vec3f color = Vec3f(random(0.1f, 1.0f), random(0.1f, 1.0f), random(0.1f, 1.0f)).normalized();
 		scene->AddLight(pos, light_color * intensity / num_lights);
 	}
-	*/
+	
 
 	/*
 	for (int i = 0; i < 10; i++) {
@@ -121,6 +123,30 @@ int main() {
 
 	// set the seed for the standard random function with constant value for comparable results across multiple runs
 	srand(42);
+
+
+	std::vector<ZOrderIndex> indices = std::vector<ZOrderIndex>();
+
+	indices.emplace_back(Vec3f(2, 0, 0));
+	indices.emplace_back(Vec3f(1, 2, 0));
+	indices.emplace_back(Vec3f(0, 0, 2));
+
+	for (int i = 0; i < 10; i++) {
+		indices.emplace_back(random(Vec3f(0.0f), Vec3f(4.0f)));
+	}
+
+	std::wcout << "Initial" << std::endl;
+	for (auto& i : indices) {
+		std::cout << i << std::endl;
+	}
+
+	std::sort(indices.begin(), indices.end());
+
+	std::cout << "Sorted" << std::endl;
+	for (auto& i : indices) {
+		std::cout << i << std::endl;
+	}
+
 	/*
 	KdTree<Vec3f, std::string, 3> kdtree = KdTree<Vec3f, std::string, 3>();
 
@@ -139,7 +165,7 @@ int main() {
 	kdtree.Insert(Vec3f(1, 0, 10), "yellow");
 	kdtree.Insert(Vec3f(2, 1, 11), "yellow");
 
-	kdtree.Build();
+	kdtree.BuildZOrder();
 
 	{
 		Vec3f key;
@@ -191,8 +217,9 @@ int main() {
 	for (auto s : res) {
 		std::cout << "Value: " << s.val << ", dist: " << s.dist << std::endl;
 	}
-	*/
+	
 
+	*/
 	//exit(0);
 	/*
 	std::vector<Vec3f> points = std::vector<Vec3f>();
@@ -228,7 +255,7 @@ int main() {
 	// scene added as pointer, for easier access over multiple threads
 	Scene* scene = new Scene();
 	//scene->LoadScene("Sponza.scene", "../models/");
-	scene->LoadScene("SponzaHallway.scene", "../models/");
+	scene->LoadScene("Sponza.scene", "../models/");
 	prepareScene(scene);
 
 	// create the camera
@@ -259,6 +286,8 @@ int main() {
 
 	std::cout << "Time: " << (static_cast<double>(std::clock()) - start) / static_cast<double>(CLOCKS_PER_SEC) << " s" << std::endl;
 
+	//exit(0);
+
 
 	// define images to render to
 	Image img(width, height);
@@ -283,6 +312,8 @@ int main() {
 
 	// find the number of cores available
 	std::size_t cores = std::thread::hardware_concurrency();
+
+	std::cout << "Num Threads: " << cores << std::endl;
 	volatile std::atomic<unsigned int> count(0);
 	std::vector<std::future<Report>> future_vector;
 
