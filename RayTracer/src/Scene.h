@@ -82,7 +82,7 @@ public: /// Public Functions
 	unsigned int GetNumLights() const { return static_cast<unsigned int>(lights.size()); }
 	unsigned int GetNumPlanes() const { return static_cast<unsigned int>(planes.size()); }
 	float GetThreshold() const { return threshold; }
-	const PinHoleCamera& GetCamera() const { return cam; }
+	PinHoleCamera& GetCamera() { return cam; }
 
 	const Material* GetMaterial(unsigned int index) const { return materials[index]; }
 

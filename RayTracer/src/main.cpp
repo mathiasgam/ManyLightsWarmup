@@ -71,16 +71,16 @@ void prepareScene(Scene* scene) {
 
 	scene->SetAmbient(Vec3f(0.2f));
 
-	const float intensity = 500.0f;
+	const float intensity = 50.0f;
 	//scene->AddLight(Vec3f(16.0f, 5.0f, 6.0f), light_color * 100);
 	//scene->AddLight(Vec3f(15, 10, 0), light_color * 100);
 	//scene->AddLight(Vec3f(24, 10, 0), light_color * 100);
 
-	const int clusters = 5;
+	const int clusters = 1;
 	const int per_cluster = 100;
 	const int num_lights = clusters * per_cluster;
 	
-	
+	/*
 	Vec3f center = Vec3f(0.0f, 5.0f, -1.0f);
 	Vec3f dim = Vec3f(8.0f, 1.0f, 1.0f);
 	for (int i = 0; i < clusters; i++) {
@@ -88,16 +88,19 @@ void prepareScene(Scene* scene) {
 		Vec3f color = Vec3f(random(0.1f, 1.0f), random(0.1f, 1.0f), random(0.1f, 1.0f)).normalized();
 		addLightCluster(scene, random(center - dim, center + dim), Vec3f(0.2f), color * intensity / clusters, per_cluster);
 	}
+	*/
 	
-	/*
-	Vec3f center = Vec3f(0.0f, 3.0f, -1.0f);
-	Vec3f dim = Vec3f(8.0f, 2.0f, 1.0f);
+	
+	//Vec3f center = Vec3f(0.0f, 3.0f, -1.0f);
+	//Vec3f dim = Vec3f(8.0f, 2.0f, 1.0f);
+	Vec3f center = Vec3f(0.0f, 3.0f, -0.0f);
+	Vec3f dim = Vec3f(4.0f, 2.0f, 4.0f);
 	for (int i = 0; i < num_lights; i++) {
 		Vec3f pos = random(center - dim, center + dim);
 		Vec3f color = Vec3f(random(0.1f, 1.0f), random(0.1f, 1.0f), random(0.1f, 1.0f)).normalized();
 		scene->AddLight(pos, light_color * intensity / num_lights);
 	}
-	*/
+	
 
 	/*
 	for (int i = 0; i < 10; i++) {
@@ -228,18 +231,22 @@ int main() {
 	// scene added as pointer, for easier access over multiple threads
 	Scene* scene = new Scene();
 	//scene->LoadScene("Sponza.scene", "../models/");
-	scene->LoadScene("SponzaHallway.scene", "../models/");
+	scene->LoadScene("Figures.scene", "../models/");
 	prepareScene(scene);
 
 	// create the camera
-	const PinHoleCamera& cam = scene->GetCamera();
+	PinHoleCamera& cam = scene->GetCamera();
+	//cam.SetPosition(Vec3f(0, 3, 4));
 	//cam.SetPosition(Vec3f(-2.5f, 1.0f, 0.0f));
 	//cam.SetPosition(Vec3f(-2.0f, 2.0f, 3.0f));
 	//cam.SetPosition(Vec3f(-20.0f, 10.0f, 10.0f));
 	//cam.SetPosition(Vec3f(-8.0f, 1.0f, 10.0f));
 
 	//cam.SetPosition(Vec3f(10.0f, 1.7f, 0.0f)); // sponza
-	//cam.LookAt(Vec3f(0.0f, 0.5f, 0.5f));
+	//cam.LookAt(Vec3f(0.0f, 3.0f, 0.0f));
+
+	cam.SetPosition(Vec3f(10.0f, 10.0f, 10.0f)); // sponza
+	cam.LookAt(Vec3f(0.0f, 1.0f, 0.0f));
 
 	RayTracer* tracer = new RayTracer(scene);
 	tracer->SetLightThreshold(scene->GetThreshold());

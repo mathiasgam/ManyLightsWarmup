@@ -2,6 +2,7 @@
 #include "MortonCode.h"
 #include "Structure/AABB.h"
 #include <vector>
+
 #include <algorithm>
 #include <limits>
 
@@ -48,7 +49,51 @@ void LightTree::init(std::vector<PointLight*> lights)
 std::vector<PointLight*> LightTree::GetLights(const HitInfo& hit, float threshold) const
 {
 	std::vector<PointLight*> lights = std::vector<PointLight*>();
-	SearchLights(lights, root, hit, threshold);
+	Vec3f total_radiance = Vec3f(0.0f);
+	std::priority_queue<NodeCut, std::vector<NodeCut>, NodeCutCompare> queue = std::priority_queue<NodeCut, std::vector<NodeCut>, NodeCutCompare>();
+
+	// push the root node to the queue
+	{
+		NodeCut root_cut = CreateNodeCut(root, hit);
+		queue.push(root_cut);
+		total_radiance += root_cut.radiance;
+	}
+
+	while (queue.size() < 1000) {
+		NodeCut cut = queue.top();
+
+		//std::cout << "Error: " << cut.error << std::endl;
+#if RANDOM_THRESHOLD
+		if ((cut.error - total_radiance * threshold * random(0.9f, 1.1)).max_componont() > 0.0f) {
+#else
+		if ((cut.error - total_radiance * threshold).max_componont() > 0.0f) {
+#endif
+			queue.pop();
+			total_radiance -= cut.radiance;
+
+			NodeCut A = CreateNodeCut(cut.node->ChildA, hit);
+			NodeCut B = CreateNodeCut(cut.node->ChildB, hit);
+			total_radiance += A.radiance + B.radiance;
+
+			//std::cout << "Prev error: " << cut.errorsum << ", new error: " << A.errorsum + B.errorsum << std::endl;
+
+			queue.push(A);
+			queue.push(B);
+		}
+		else {
+			// if the worst error is less than the permitted error, theres no reason to refine more clusters
+			//std::cout << "threshold reached: " << cut.errorsum << std::endl;
+			break;
+		}
+
+		}
+	size_t N = queue.size();
+	lights.resize(N);
+	//std::cout << "Num lights: " << N << ", max error: " << queue.top().errorsum << std::endl;
+	for (int i = 0; i < N; i++) {
+		lights[i] = queue.top().node->reprecentative;
+		queue.pop();
+	}
 
 	return lights;
 }
@@ -59,7 +104,7 @@ std::vector<Line> LightTree::GetTreeEdges() const
 	GetTreeEdgesRecurse(lines, root, Vec3f(1, 0, 0));
 	return lines;
 }
-
+/*
 void LightTree::SearchLights(std::vector<PointLight*>& out, LightNode* node, const HitInfo& hit, float threshold) const
 {
 	if (node->type == NodeType::Leaf) {
@@ -103,8 +148,9 @@ void LightTree::SearchLights(std::vector<PointLight*>& out, LightNode* node, con
 		SearchLights(out, node->ChildB, hit, threshold);
 	}
 }
+*/
 
-LightTree::LightNode* LightTree::generateHierarchy(std::vector<BuildPrimitive>& sortedPrimitives, int first, int last)
+LightNode* LightTree::generateHierarchy(std::vector<BuildPrimitive>& sortedPrimitives, int first, int last)
 {
 	LightNode* node = new LightNode();
 
@@ -222,7 +268,7 @@ void LightTree::GetTreeEdgesRecurse(std::vector<Line>& lines, const LightNode* n
 	assert(false);
 }
 
-void LightTree::deleteNode(LightTree::LightNode* node)
+void LightTree::deleteNode(LightNode* node)
 {
 	if (node == nullptr)
 		return;

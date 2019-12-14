@@ -9,22 +9,15 @@
 #include "Geometry/Line.h"
 
 #include <vector>
+#include <queue>
+
+#include "LightNode.h"
+
 
 class LightTree : LightStructure
 {
 private:
-	enum NodeType {
-		Internal,
-		Leaf
-	};
-	struct LightNode
-	{
-		int type;
-		AABB bbox;
-		LightNode* ChildA;
-		LightNode* ChildB;
-		PointLight* reprecentative;
-	};
+	
 
 	struct BuildPrimitive {
 		MortonCode3 code;
@@ -54,7 +47,7 @@ public:
 
 private:
 
-	void SearchLights(std::vector<PointLight*>& out, LightNode* node, const HitInfo& hit, float threshold) const;
+	//void SearchLights(std::vector<PointLight*>& out, LightNode* node, const HitInfo& hit, float threshold) const;
 
 	LightNode* generateHierarchy(std::vector<BuildPrimitive>& sortedPrimitives, int first, int last);
 	int findSplit(std::vector<BuildPrimitive>& sortedPrimitives, int first, int last);
