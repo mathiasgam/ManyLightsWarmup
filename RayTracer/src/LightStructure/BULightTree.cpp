@@ -192,7 +192,8 @@ void BULightTree::BuildTree(std::unordered_set<LightNode*>& clusters)
 		//std::cout << "Node*: " << &node << std::endl;
 	}
 
-	kdtree.Build();
+	kdtree.BuildZOrder();
+	//kdtree.Build();
 
 	{
 		// find the best neighbors to each node

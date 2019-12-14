@@ -6,6 +6,7 @@
 
 
 #include <iostream>
+#include <iomanip>
 #include <cassert>
 #include <intrin.h>
 
@@ -16,10 +17,11 @@
 
 template<class T, class V, unsigned int K>
 class API ArithVec {
-protected:
-
+public:
 	/// Actual data of the vector
 	T data[K];
+
+protected:
 
 	/// Construct uninitialized vector
 	ArithVec()
@@ -355,7 +357,7 @@ template <class T, class V, unsigned int K>
 inline std::ostream& operator<<(std::ostream&os, const ArithVec<T, V, K>& v)
 {
 	os << "[ ";
-	for (unsigned int i = 0; i < K; i++) os << v[i] << " ";
+	for (unsigned int i = 0; i < K; i++) os << std::fixed << std::setprecision(3) << std::setfill('0') << v[i] << " ";
 	os << "]";
 	return os;
 }
