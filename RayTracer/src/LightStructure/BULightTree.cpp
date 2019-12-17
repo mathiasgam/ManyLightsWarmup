@@ -91,53 +91,53 @@ void BULightTree::init(std::vector<PointLight*> lights)
 std::vector<PointLight*> BULightTree::GetLights(const HitInfo& hit, float threshold) const
 {
 	std::vector<PointLight*> lights = std::vector<PointLight*>();
-	Vec3f total_radiance = Vec3f(0.0f);
-	std::priority_queue<NodeCut, std::vector<NodeCut>, NodeCutCompare> queue = std::priority_queue<NodeCut, std::vector<NodeCut>, NodeCutCompare>();
+Vec3f total_radiance = Vec3f(0.0f);
+std::priority_queue<NodeCut, std::vector<NodeCut>, NodeCutCompare> queue = std::priority_queue<NodeCut, std::vector<NodeCut>, NodeCutCompare>();
 
-	// push the root node to the queue
-	for (LightNode* n : light_forest) {
-		NodeCut root = CreateNodeCut(n, hit);
-		queue.push(root);
-		total_radiance += root.radiance;
-	}
+// push the root node to the queue
+for (LightNode* n : light_forest) {
+	NodeCut root = CreateNodeCut(n, hit);
+	queue.push(root);
+	total_radiance += root.radiance;
+}
 
-	while (queue.size() < 1000) {
-		NodeCut cut = queue.top();
+while (queue.size() < 1000) {
+	NodeCut cut = queue.top();
 
-		//std::cout << "Error: " << cut.error << std::endl;
+	//std::cout << "Error: " << cut.error << std::endl;
 #if RANDOM_THRESHOLD
-		if ((cut.error - total_radiance * threshold * random(0.9f, 1.1)).max_componont() > 0.0f) {
+	if ((cut.error - total_radiance * threshold * random(0.9f, 1.1)).max_componont() > 0.0f) {
 #else
-		if ((cut.error - total_radiance * threshold).max_componont() > 0.0f) {
+	if ((cut.error - total_radiance * threshold).max_componont() > 0.0f) {
 #endif
-			queue.pop();
-			total_radiance -= cut.radiance;
-
-			NodeCut A = CreateNodeCut(cut.node->ChildA, hit);
-			NodeCut B = CreateNodeCut(cut.node->ChildB, hit);
-			total_radiance += A.radiance + B.radiance;
-
-			//std::cout << "Prev error: " << cut.errorsum << ", new error: " << A.errorsum + B.errorsum << std::endl;
-
-			queue.push(A);
-			queue.push(B);
-		}
-		else {
-			// if the worst error is less than the permitted error, theres no reason to refine more clusters
-			//std::cout << "threshold reached: " << cut.errorsum << std::endl;
-			break;
-		}
-
-	}
-	size_t N = queue.size();
-	lights.resize(N);
-	//std::cout << "Num lights: " << N << ", max error: " << queue.top().errorsum << std::endl;
-	for (int i = 0; i < N; i++) {
-		lights[i] = queue.top().node->reprecentative;
 		queue.pop();
+		total_radiance -= cut.radiance;
+
+		NodeCut A = CreateNodeCut(cut.node->ChildA, hit);
+		NodeCut B = CreateNodeCut(cut.node->ChildB, hit);
+		total_radiance += A.radiance + B.radiance;
+
+		//std::cout << "Prev error: " << cut.errorsum << ", new error: " << A.errorsum + B.errorsum << std::endl;
+
+		queue.push(A);
+		queue.push(B);
+	}
+	else {
+		// if the worst error is less than the permitted error, theres no reason to refine more clusters
+		//std::cout << "threshold reached: " << cut.errorsum << std::endl;
+		break;
 	}
 
-	return lights;
+}
+size_t N = queue.size();
+lights.resize(N);
+//std::cout << "Num lights: " << N << ", max error: " << queue.top().errorsum << std::endl;
+for (int i = 0; i < N; i++) {
+	lights[i] = queue.top().node->reprecentative;
+	queue.pop();
+}
+
+return lights;
 }
 
 std::vector<Line> BULightTree::GetTreeEdges() const
@@ -181,28 +181,21 @@ float BULightTree::distance(const PointLight* p1, const PointLight* p2)
 	return distance(p1, p2);
 }
 
-inline void pushNearestNeighbour(GraphNode& n1, Graph& graph, const KdTree<Vec3f, GraphNode*, 3>& kdtree) {
-	static std::mutex m = std::mutex();
-	LightNode* c1 = n1.node;
-	float dist = std::numeric_limits<float>::max();
-	Vec3f pos;
-	GraphNode* n2;
-	kdtree.Nearest(c1->reprecentative->position, &n1, dist, pos, n2);
-	{
-		std::scoped_lock lock(m);
-		graph.edges.push(GraphEdge(&n1, n2, dist));
-	}
-}
 
 void BULightTree::BuildTree(std::unordered_set<LightNode*>& clusters)
 {
 	Graph graph = Graph();
 	KdTree<Vec3f, GraphNode*, 3> kdtree = KdTree<Vec3f, GraphNode*, 3>();
 	//graph.nodes.resize(clusters.size());
+	AABB bbox = AABB();
+
+	graph.nodes.reserve(clusters.size());
+	kdtree.Reserve(clusters.size());
 
 	// insert all lights in the cluster set.
 	for (LightNode* node : clusters) {
 		graph.nodes.push_back(GraphNode(node));
+		bbox.add_point(node->reprecentative->position);
 	}
 
 	// insert nodes from the graph into the kd tree
@@ -214,25 +207,31 @@ void BULightTree::BuildTree(std::unordered_set<LightNode*>& clusters)
 	//kdtree.BuildZOrder();
 	kdtree.Build();
 
-	std::for_each(std::execution::par_unseq, graph.nodes.begin(), graph.nodes.end(), [&graph, &kdtree](GraphNode& n1) {
-		pushNearestNeighbour(n1, graph, kdtree);
-	});
 
-	/*
-	{
-		// find the best neighbors to each node
-		for (GraphNode& n1 : graph.nodes) {
-			LightNode* c1 = n1.node;
-			float dist = std::numeric_limits<float>::max();
-			std::vector<KDTreeRecord<Vec3f, GraphNode*>> res = std::vector<KDTreeRecord<Vec3f, GraphNode*>>();
-			kdtree.NNearest(c1->reprecentative->position, &n1, dist, res, N);
-			//std::cout << "closest dist: " << res[0].dist << std::endl;
-			for (int i = 0; i < N; i++) {
-				graph.edges.push(GraphEdge(&n1, res[i].val, distance(n1.node->reprecentative, res[i].val->node->reprecentative)));
+
+	std::for_each(std::execution::par, graph.nodes.begin(), graph.nodes.end(), [&bbox, &graph, &kdtree](GraphNode& n1) {
+		static std::mutex m = std::mutex();
+		LightNode* c1 = n1.node;
+
+		// initial guess of the distance
+		float dist = bbox.size().max_componont() / 100.0f;
+
+		Vec3f pos;
+		GraphNode* n2;
+
+		// search for a node within the guessed distance
+		if (kdtree.Nearest(c1->reprecentative->position, &n1, dist, pos, n2)) {
+			std::scoped_lock lock(m);
+			graph.edges.push(GraphEdge(&n1, n2, dist));
+		}
+		else { // if nothing was found with the guess. do the more expensive nearest neighbour search with maximum allowed distance
+			dist = std::numeric_limits<float>::max();
+			if (kdtree.Nearest(c1->reprecentative->position, &n1, dist, pos, n2)) {
+				std::scoped_lock lock(m);
+				graph.edges.push(GraphEdge(&n1, n2, dist));
 			}
 		}
-	}
-	*/
+	});
 
 	std::cout << "Graph: nodes = " << graph.nodes.size() << ", edges = " << graph.edges.size() << std::endl;
 

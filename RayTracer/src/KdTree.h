@@ -63,7 +63,7 @@ struct KDTreeRecord {
 	KeyT key;
 	ValT val;
 	KDTreeRecord(float in_dist, KeyT in_key, ValT in_val) : dist(in_dist), key(in_key), val(in_val) {}
-	KDTreeRecord(): dist(0.0f), key(), val() {}
+	KDTreeRecord() : dist(0.0f), key(), val() {}
 };
 
 template<class KeyT, class ValT>
@@ -138,13 +138,16 @@ public:
 	~KdTree();
 
 	bool Nearest(const KeyT& in_key, const ValT& in_val, float& in_out_dist, KeyT& out_key, ValT& out_val) const;
+	bool Nearest(const unsigned int in_node, float& in_out_dist, KeyT& out_key, ValT& out_val) const;
 	bool NNearest(const KeyT& in_key, const ValT& in_val, float& in_out_dist, std::vector<KDTreeRecord<KeyT, ValT>>& out_vector, const unsigned int N) const; // will ignore self
 	unsigned int NearestExceptSelf(const KeyT& in_key, float& in_out_dist, KeyT& out_key, ValT& out_val, unsigned int in_self) const;
 	unsigned int NearestExcept(const KeyT& in_key, float& in_out_dist, KeyT& out_key, ValT& out_val, const std::unordered_set<unsigned int>& in_except) const;
 
+	void Reserve(const size_t size) { keys.reserve(size); }
 	void Insert(const KeyT& in_key, const ValT& in_val);
 	void ExcangeVal(const ValT& in_val, const unsigned int in_index);
 	//void remove(const T*);
+
 	void Build();
 
 	/// Same functionallity as Build(), but is using Z-Order curve to sort primitives
@@ -157,6 +160,7 @@ public:
 
 	/// find a index of an element matching the key and value. if none is found zero is returned.
 	unsigned int Find(const KeyT& in_key, const ValT& in_val);
+	std::vector<std::pair<unsigned int, ValT>> GetNodes();
 
 	//unsigned int depth() const;
 
@@ -172,6 +176,7 @@ private:
 	int OptimalAxis(const unsigned int in_begin, const unsigned int in_end) const;
 
 	unsigned int FindRecurse(const unsigned int in_node, const KeyT& in_key, const ValT& in_val) const;
+
 
 };
 
@@ -203,6 +208,41 @@ inline bool KdTree<KeyT, ValT, K>::Nearest(const KeyT& in_key, const ValT& in_va
 
 	if (nodes.size() > 1) {
 		float sqr_dist = in_out_dist * in_out_dist;
+		unsigned int n = 0;
+		NearestRecurse(1, in_key, in_val, sqr_dist, n);
+		if (n != 0) {
+			//std::cout << "res = " << n << std::endl;
+			out_key = nodes[n].key;
+			out_val = nodes[n].val;
+			in_out_dist = sqrt(sqr_dist);
+			return true;
+		}
+	}
+	return false;
+}
+
+template<class KeyT, class ValT, unsigned int K>
+inline bool KdTree<KeyT, ValT, K>::Nearest(const unsigned int in_node, float & in_out_dist, KeyT & out_key, ValT & out_val) const
+{
+	assert(isBuild);
+
+	const unsigned int size = static_cast<unsigned int>(nodes.size());
+	if (size > 1 && in_node < size) {
+		float sqr_dist = in_out_dist * in_out_dist;
+
+		KeyT in_key = nodes[in_node].key;
+		ValT in_val = nodes[in_node].val;
+
+		{
+			unsigned int idx = in_node * 2;
+			if (idx < size) {
+				sqr_dist = min(SqrDist(nodes[in_node].key, nodes[idx].key), sqr_dist);
+			}
+			if (idx + 1 < size) {
+				sqr_dist = min(SqrDist(nodes[in_node].key, nodes[idx + 1].key), sqr_dist);
+			}
+		}
+
 		unsigned int n = 0;
 		NearestRecurse(1, in_key, in_val, sqr_dist, n);
 		if (n != 0) {
@@ -348,7 +388,7 @@ inline void KdTree<KeyT, ValT, K>::BuildZOrder()
 	}
 
 	std::cout << keys[1].key << std::endl;
-	std::cout << keys[N-1].key << std::endl;
+	std::cout << keys[N - 1].key << std::endl;
 
 	nodes.resize(N);
 
@@ -383,6 +423,21 @@ inline unsigned int KdTree<KeyT, ValT, K>::Find(const KeyT& in_key, const ValT& 
 		}
 	}
 	return 0;
+}
+
+template<class KeyT, class ValT, unsigned int K>
+inline std::vector<std::pair<unsigned int, ValT>> KdTree<KeyT, ValT, K>::GetNodes()
+{
+	std::vector<std::pair<unsigned int, ValT>> res = std::vector<std::pair<unsigned int, ValT>>();
+
+	if (isBuild) {
+		res.resize(nodes.size() - 1);
+		for (int i = 1; i < nodes.size(); i++) {
+			res.push_back(std::make_pair(i, nodes[i].val));
+		}
+	}
+
+	return res;
 }
 
 template<class KeyT, class ValT, unsigned int K>
@@ -468,8 +523,8 @@ inline void KdTree<KeyT, ValT, K>::BuildRecurseZOrder(const unsigned int in_curr
 	KdNode* data = keys.data();
 	//std::nth_element(data + in_begin, data + median, data + in_end, axisCompare[axis]);
 
-	
-	std::cout << "[" << keys[in_begin].key << ", " << keys[median].key << ", " << keys[in_end-1].key << " ], axis: " << axis << std::endl;
+
+	std::cout << "[" << keys[in_begin].key << ", " << keys[median].key << ", " << keys[in_end - 1].key << " ], axis: " << axis << std::endl;
 
 	for (int i = in_begin; i < median; i++) {
 		std::cout << keys[i].key[axis] << ", " << keys[median].key[axis] << ", " << (keys[i].key[axis] < keys[median].key[axis]) << std::endl;
@@ -480,8 +535,8 @@ inline void KdTree<KeyT, ValT, K>::BuildRecurseZOrder(const unsigned int in_curr
 	for (int i = median + 1; i < in_end; i++) {
 		std::cout << keys[i].key[axis] << ", " << keys[median].key[axis] << ", " << (keys[i].key[axis] > keys[median].key[axis]) << std::endl;
 	}
-	
-	
+
+
 	assert(std::all_of(data + in_begin, data + median, [=](auto& node) { return node.key[axis] <= keys[median].key[axis]; }));
 	assert(std::all_of(data + median + 1, data + in_end, [=](auto& node) { return node.key[axis] >= keys[median].key[axis]; }));
 

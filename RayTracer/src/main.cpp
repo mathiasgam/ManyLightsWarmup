@@ -78,7 +78,7 @@ void prepareScene(Scene* scene) {
 	//scene->AddLight(Vec3f(24, 10, 0), light_color * 100);
 
 	const int clusters = 1;
-	const int per_cluster = 1000000;
+	const int per_cluster = 10000;
 	const int num_lights = clusters * per_cluster;
 	
 	/*
