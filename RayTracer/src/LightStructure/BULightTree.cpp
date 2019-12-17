@@ -106,7 +106,7 @@ std::vector<PointLight*> BULightTree::GetLights(const HitInfo& hit, float thresh
 
 		//std::cout << "Error: " << cut.error << std::endl;
 #if RANDOM_THRESHOLD
-		if ((cut.error - total_radiance * threshold * random(0.9f,1.1)).max_componont() > 0.0f) {
+		if ((cut.error - total_radiance * threshold * random(0.9f, 1.1)).max_componont() > 0.0f) {
 #else
 		if ((cut.error - total_radiance * threshold).max_componont() > 0.0f) {
 #endif
@@ -171,9 +171,28 @@ Vec3f GetRadiance(const LightNode& node, const HitInfo& hit, const Vec3f& materi
 }
 */
 
+inline float distance(const PointLight* p1, const PointLight* p2)
+{
+	return (p1->position - p2->position).length();
+}
 
+float BULightTree::distance(const PointLight* p1, const PointLight* p2)
+{
+	return distance(p1, p2);
+}
 
-
+inline void pushNearestNeighbour(GraphNode& n1, Graph& graph, const KdTree<Vec3f, GraphNode*, 3>& kdtree) {
+	static std::mutex m = std::mutex();
+	LightNode* c1 = n1.node;
+	float dist = std::numeric_limits<float>::max();
+	Vec3f pos;
+	GraphNode* n2;
+	kdtree.Nearest(c1->reprecentative->position, &n1, dist, pos, n2);
+	{
+		std::scoped_lock lock(m);
+		graph.edges.push(GraphEdge(&n1, n2, dist));
+	}
+}
 
 void BULightTree::BuildTree(std::unordered_set<LightNode*>& clusters)
 {
@@ -192,9 +211,14 @@ void BULightTree::BuildTree(std::unordered_set<LightNode*>& clusters)
 		//std::cout << "Node*: " << &node << std::endl;
 	}
 
-	kdtree.BuildZOrder();
-	//kdtree.Build();
+	//kdtree.BuildZOrder();
+	kdtree.Build();
 
+	std::for_each(std::execution::par_unseq, graph.nodes.begin(), graph.nodes.end(), [&graph, &kdtree](GraphNode& n1) {
+		pushNearestNeighbour(n1, graph, kdtree);
+	});
+
+	/*
 	{
 		// find the best neighbors to each node
 		for (GraphNode& n1 : graph.nodes) {
@@ -208,6 +232,7 @@ void BULightTree::BuildTree(std::unordered_set<LightNode*>& clusters)
 			}
 		}
 	}
+	*/
 
 	std::cout << "Graph: nodes = " << graph.nodes.size() << ", edges = " << graph.edges.size() << std::endl;
 
@@ -290,11 +315,6 @@ void BULightTree::BuildTree(std::unordered_set<LightNode*>& clusters)
 	}
 
 	std::cout << "clusters: " << clusters.size() << std::endl;
-}
-
-float BULightTree::distance(const PointLight* p1, const PointLight* p2)
-{
-	return (p1->position - p2->position).length();
 }
 
 PointLight* BULightTree::MergeLights(PointLight* A, PointLight* B)

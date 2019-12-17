@@ -78,7 +78,7 @@ void prepareScene(Scene* scene) {
 	//scene->AddLight(Vec3f(24, 10, 0), light_color * 100);
 
 	const int clusters = 1;
-	const int per_cluster = 100;
+	const int per_cluster = 1000000;
 	const int num_lights = clusters * per_cluster;
 	
 	/*
@@ -251,6 +251,45 @@ int main() {
 
 	//exit(0);
 
+	/*
+	struct MortonTest {
+		MortonCode3 key;
+		Vec3f val;
+		MortonTest(MortonCode3 key, Vec3f val) : key(key), val(val) {}
+		inline bool operator< (const MortonTest& other) {
+			return key < other.key;
+		}
+	};
+
+	struct ZOrderTest {
+		ZOrderIndex key;
+		Vec3f val;
+		ZOrderTest(ZOrderIndex key, Vec3f val) : key(key), val(val) {}
+		inline bool operator< (const ZOrderTest& other) {
+			return key < other.key;
+		}
+	};
+
+	const int NUM = 200;
+
+	std::vector<MortonTest> morton = std::vector<MortonTest>();
+	std::vector<ZOrderTest> zorder = std::vector<ZOrderTest>();
+	for (int i = 0; i < NUM; i++) {
+		Vec3f point = random(Vec3f(0.0f), Vec3f(1.0f));
+		morton.emplace_back(MortonCode3(point), point);
+		zorder.emplace_back(ZOrderIndex(point), point);
+	}
+
+	std::sort(std::execution::par_unseq, morton.begin(), morton.end());
+	std::sort(std::execution::par_unseq, zorder.begin(), zorder.end());
+
+	for (int i = 0; i < NUM; i++) {
+		std::cout << morton[i].val << ", " << zorder[i].val << std::endl;
+	}
+
+
+	exit(0);
+	*/
 
 	//cam.SetPosition(Vec3f(10.0f, 1.0f, -4.0f)); // sponza side
 	//cam.LookAt(Vec3f(0.0f, 0.5f, -4.5f));

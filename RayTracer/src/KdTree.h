@@ -72,6 +72,21 @@ bool operator < (const KDTreeRecord<KeyT, ValT>& a, const KDTreeRecord<KeyT, Val
 }
 
 
+template<class KeyT>
+inline float SqrDist(const KeyT& k1, const KeyT& k2) {
+	KeyT diff = k1 - k2;
+	return dot(diff, diff);
+}
+
+template<>
+inline float SqrDist(const Vec3f& k1, const Vec3f& k2) {
+	float dist = 0;
+	for (int i = 0; i < 3; i++) {
+		dist += sqr(k1[i] - k2[i]);
+	}
+	return dist;
+}
+
 /// Uses the KeyT to map ValT in the KdTree. Example of use could be KeyT = Vec3f and ValT = LightSource*, where the Vec3f is used to map the lights by position
 /// The KeyT class is assumed to be an extension of the ArithVec class, but can also consist of others, as long as the used methods are implemented.
 template<class KeyT, class ValT, unsigned int K>
@@ -89,13 +104,8 @@ private:
 		KdNode(const KeyT& in_key, const ValT& in_val) : key(in_key), val(in_val), axis(-1) {}
 		~KdNode() {}
 
-		float SqrDist(const KeyT& other) const {
-			KeyT diff = key - other;
-			return dot(diff, diff);
-		}
-
-		float Dist(const KeyT& other) const {
-			return sqrt(SqrDist(other));
+		inline float Dist(const KeyT& other) const {
+			return sqrt(SqrDist(key, other.key));
 		}
 
 	};
@@ -127,7 +137,7 @@ public:
 	KdTree();
 	~KdTree();
 
-	bool Nearest(const KeyT& in_key, float& in_out_dist, KeyT& out_key, ValT& out_val) const;
+	bool Nearest(const KeyT& in_key, const ValT& in_val, float& in_out_dist, KeyT& out_key, ValT& out_val) const;
 	bool NNearest(const KeyT& in_key, const ValT& in_val, float& in_out_dist, std::vector<KDTreeRecord<KeyT, ValT>>& out_vector, const unsigned int N) const; // will ignore self
 	unsigned int NearestExceptSelf(const KeyT& in_key, float& in_out_dist, KeyT& out_key, ValT& out_val, unsigned int in_self) const;
 	unsigned int NearestExcept(const KeyT& in_key, float& in_out_dist, KeyT& out_key, ValT& out_val, const std::unordered_set<unsigned int>& in_except) const;
@@ -155,7 +165,7 @@ private:
 	void BuildRecurse(const unsigned int in_current, const unsigned int in_begin, const unsigned int in_end);
 	void BuildRecurseZOrder(const unsigned int in_current, const unsigned int in_begin, const unsigned int in_end);
 	/// will return the index of the nearest node in the tree within the distance 'dist', if present. 
-	unsigned int NearestRecurse(const unsigned int in_node, const KeyT& in_key, float& in_out_dist) const;
+	void NearestRecurse(const unsigned int in_node, const KeyT& in_key, const ValT& in_val, float& in_out_sqr_dist, unsigned int& out_node) const;
 	void NNearestRecurse(const unsigned int in_node, const KeyT& in_key, const ValT& in_val, float& in_out_dist, NQueue<KDTreeRecord<KeyT, ValT>>& out_queue) const;
 	unsigned int NearestRecurseExceptSelf(const unsigned int in_node, const KeyT& in_key, float& in_out_dist, unsigned int in_self) const;
 	unsigned int NearestRecurseExcept(const unsigned int in_node, const KeyT& in_key, float& in_out_dist, const std::unordered_set<unsigned int>& in_except) const;
@@ -185,19 +195,21 @@ inline KdTree<KeyT, ValT, K>::~KdTree()
 }
 
 template<class KeyT, class ValT, unsigned int K>
-inline bool KdTree<KeyT, ValT, K>::Nearest(const KeyT& in_key, float& in_out_dist, KeyT& out_key, ValT& out_val) const
+inline bool KdTree<KeyT, ValT, K>::Nearest(const KeyT& in_key, const ValT& in_val, float& in_out_dist, KeyT& out_key, ValT& out_val) const
 {
 	// std::cout << "Nearest:" << std::endl;
 	// check that the tree is in fact build since last insert
 	assert(isBuild);
 
 	if (nodes.size() > 1) {
-		// float sqr_dist = dist * dist;
-		if (int n = NearestRecurse(1, in_key, in_out_dist)) {
+		float sqr_dist = in_out_dist * in_out_dist;
+		unsigned int n = 0;
+		NearestRecurse(1, in_key, in_val, sqr_dist, n);
+		if (n != 0) {
 			//std::cout << "res = " << n << std::endl;
 			out_key = nodes[n].key;
 			out_val = nodes[n].val;
-			//dist = sqrt(dist);
+			in_out_dist = sqrt(sqr_dist);
 			return true;
 		}
 	}
@@ -404,7 +416,7 @@ inline void KdTree<KeyT, ValT, K>::BuildRecurse(const unsigned int in_current, c
 
 	// sort the keys according to the axis
 	KdNode* data = keys.data();
-	std::nth_element(data + in_begin, data + median, data + in_end, axisCompare[axis]);
+	std::nth_element(std::execution::par_unseq, data + in_begin, data + median, data + in_end, axisCompare[axis]);
 
 	// insert node in the trace tree
 	nodes[in_current] = keys[median];
@@ -487,38 +499,37 @@ inline void KdTree<KeyT, ValT, K>::BuildRecurseZOrder(const unsigned int in_curr
 }
 
 template<class KeyT, class ValT, unsigned int K>
-inline unsigned int KdTree<KeyT, ValT, K>::NearestRecurse(const unsigned int in_node, const KeyT& in_key, float& in_out_dist) const
+void KdTree<KeyT, ValT, K>::NearestRecurse(const unsigned int in_node, const KeyT& in_key, const ValT& in_val, float& in_out_sqr_dist, unsigned int& out_node) const
 {
 	unsigned int return_node = 0;
-	float dist = nodes[in_node].Dist(in_key);
+	float sqr_dist = SqrDist(nodes[in_node].key, in_key);
 	//std::cout << "n=" << in_node << ", val: " << nodes[in_node].val << ", dist: " << dist << std::endl;
 
-	if (dist < in_out_dist) {
-		in_out_dist = dist;
-		return_node = in_node;
+	if (sqr_dist < in_out_sqr_dist) {
+		if (nodes[in_node].val != in_val) {
+			in_out_sqr_dist = sqr_dist;
+			out_node = in_node;
+		}
 	}
 
 	int axis = nodes[in_node].axis;
 	if (axis != -1) {
-		float axis_dist = fabsf(nodes[in_node].key[axis] - in_key[axis]);
+		float axis_sqr_dist = sqr(nodes[in_node].key[axis] - in_key[axis]);
 		bool axis_dir = in_key[axis] < nodes[in_node].key[axis];
 
-		if (axis_dir || axis_dist < in_out_dist) {
+		if (axis_dir || axis_sqr_dist < in_out_sqr_dist) {
 
 			unsigned int left_child = 2 * in_node;
 			if (left_child < nodes.size())
-				if (unsigned int nleft = NearestRecurse(left_child, in_key, in_out_dist))
-					return_node = nleft;
-
+				NearestRecurse(left_child, in_key, in_val, in_out_sqr_dist, out_node);
 		}
-		if (!axis_dir || axis_dist < in_out_dist) {
+		if (!axis_dir || axis_sqr_dist < in_out_sqr_dist) {
 			unsigned int right_child = 2 * in_node + 1;
 			if (right_child < nodes.size())
-				if (unsigned int nright = NearestRecurse(right_child, in_key, in_out_dist))
-					return_node = nright;
+				NearestRecurse(right_child, in_key, in_val, in_out_sqr_dist, out_node);
+
 		}
 	}
-	return return_node;
 }
 
 template<class KeyT, class ValT, unsigned int K>
