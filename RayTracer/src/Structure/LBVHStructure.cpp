@@ -3,6 +3,7 @@
 #include "MortonCode.h"
 
 #include <algorithm>
+#include <execution>
 #include <cassert>
 #include <iostream>
 
@@ -27,8 +28,20 @@ void LBVHStructure::init(const std::vector<const Geometry*>& _geometry, const st
 		scene_bbox.add_bbox(o->get_bbox());
 	}
 
+	Vec3f inverse_size = 1.0f / scene_bbox.size();
+
 	std::cout << "Collecting primitives\n";
+
+	size_t num_primiteves = 0;
+	for (auto& geo : _geometry) {
+		num_primiteves += geo->num_primitives();
+	}
+
+	primitives.reserve(num_primiteves);
+
+
 	// Collect all the primitives in the objects
+	unsigned int count = 0;
 	for (unsigned int i = 0; i < _geometry.size(); i++) {
 		const Geometry* object = _geometry[i];
 		const unsigned int object_size = object->num_primitives();
@@ -39,7 +52,7 @@ void LBVHStructure::init(const std::vector<const Geometry*>& _geometry, const st
 			p.index = j;
 			Vec3f center = object->get_bbox(j).center();
 			center -= scene_bbox.p_min;
-			center /= scene_bbox.p_max - scene_bbox.p_min;
+			center *= inverse_size;
 			p.code = MortonCode3(center);
 			//std::cout << "object: " << object.get_bbox(j) << " bbox: " << p.bbox << "\n";
 			primitives.push_back(p);
@@ -47,7 +60,7 @@ void LBVHStructure::init(const std::vector<const Geometry*>& _geometry, const st
 	}
 
 	std::cout << "Sorting primitives\n";
-	std::sort(primitives.begin(), primitives.end());
+	std::sort(std::execution::par, primitives.begin(), primitives.end());
 
 	std::cout << "Building BVH structure\n";
 	// recursively construct the binary search tree
