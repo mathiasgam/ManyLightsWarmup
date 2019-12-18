@@ -3,7 +3,7 @@
 #include "Structure/AABB.h"
 #include "PointLight.h"
 #include "Material.h"
-#include "HitInfo.h"
+#include "RayTracer/HitInfo.h"
 
 enum NodeType {
 	Internal,

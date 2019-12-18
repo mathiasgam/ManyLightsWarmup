@@ -1,6 +1,6 @@
 
 #include "config.h"
-#include "Ray.h"
+#include "RayTracer/Ray.h"
 #include "Geometry/Sphere.h"
 #include "Geometry/SphereGroup.h"
 #include "Structure/ArraySphereStructure.h"
@@ -38,7 +38,8 @@
 #include "ImageTile.h"
 
 #include "Scene.h"
-#include "RayTracer.h"
+#include "RayTracer/RayTracer.h"
+#include "RayTracer/Tracer.h"
 
 #include "Sampling.h"
 
@@ -337,9 +338,9 @@ int main() {
 
 	// define images to render to
 	Image img(width, height);
-	Image img_lights(width, height);
-	Image img_depth(width, height);
-	Image img_visual(width, height);
+	//Image img_lights(width, height);
+	//Image img_depth(width, height);
+	//Image img_visual(width, height);
 
 
 	// start the rendering process
@@ -349,6 +350,17 @@ int main() {
 	float epsilon = 0.0001f;
 
 	const unsigned int max = width * height;
+
+	Tracer main_tracer = Tracer();
+	main_tracer.setScene(scene);
+
+	auto rays = cam.generateRays(Vec2ui(width, height), 1);
+
+	for (auto& ray : rays) {
+		main_tracer.push(ray);
+	}
+	main_tracer.trace();
+	/*
 
 	struct Report {
 		unsigned int num_rays;
@@ -366,7 +378,7 @@ int main() {
 	// add Async processies until all cores have one
 	while (cores--)
 		future_vector.emplace_back(
-			std::async([=, &cam, &count, &img, &img_depth, &img_lights, &img_visual]()
+			std::async([=, &cam, &count, &img]()
 				{
 					Report report = {};
 					report.num_rays = 0;
@@ -408,9 +420,9 @@ int main() {
 						f += static_cast<float>(res.num_lights) / scene->GetNumLights();
 
 						img.setPixel(i, j, color);
-						img_visual.setPixel(i, j, res.visualColor);
-						img_lights.setPixel(i, j, f);
-						img_depth.setPixel(i, j, fd);
+						//img_visual.setPixel(i, j, res.visualColor);
+						//img_lights.setPixel(i, j, f);
+						//img_depth.setPixel(i, j, fd);
 					}
 					return report;
 				}));
@@ -428,11 +440,13 @@ int main() {
 		report_final.num_occlusion_rays += report_tmp.num_occlusion_rays;
 		report_final.num_lights += report_tmp.num_lights;
 	}
+	*/
 
 	std::cout << "Complete" << std::endl;
 
 	std::cout << std::endl;
 
+	/*
 	const double seconds = (static_cast<double>(std::clock()) - start) / static_cast<double>(CLOCKS_PER_SEC);
 	const double mil_rays = (static_cast<double>(report_final.num_rays) + static_cast<double>(report_final.num_occlusion_rays)) / 10e6;
 	std::cout << "\nReport: \n";
@@ -442,11 +456,12 @@ int main() {
 
 	float avg_lights = report_final.num_lights / static_cast<float>(width * height);
 	std::cout << "- Avg lights: " << avg_lights << ", reduction: " << avg_lights / scene->GetNumLights() << std::endl;
+	*/
 
 	img.save_as("Test.png");
-	img_depth.save_as("Trace_depth.png");
-	img_lights.save_as("Trace_lights.png");
-	img_visual.save_as("Visual.png");
+	//img_depth.save_as("Trace_depth.png");
+	//img_lights.save_as("Trace_lights.png");
+	//img_visual.save_as("Visual.png");
 
 	// cleanup memory
 	delete tracer;

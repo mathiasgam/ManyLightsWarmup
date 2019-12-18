@@ -8,7 +8,7 @@ class Image
 {
 protected:
 	Vec2ui res;
-	std::vector<unsigned char> data;
+	std::vector<Vec4f> data;
 
 public:
 	Image(const unsigned int width, const unsigned int height);

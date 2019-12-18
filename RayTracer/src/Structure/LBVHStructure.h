@@ -62,6 +62,11 @@ private:
 	bool closest_plane(Ray&, HitInfo&, Vec3f& dirfrac) const;
 	bool any_plane(Ray&, Vec3f& dirfrac) const;
 
+	void closest_hit(std::vector<Ray>& rays, std::vector<HitInfo>& hits) const;
+	void closest_hit_recurse(std::vector<Ray>& rays, std::vector<HitInfo>& hits) const;
+	void any_hit(std::vector<Ray>& rays) const;
+
+
 	Node* generateHierarchy(std::vector<Primitive>& sortedPrimitives, int first, int last);
 	int findSplit(std::vector<Primitive>& sortedPrimitives, int first, int last);
 

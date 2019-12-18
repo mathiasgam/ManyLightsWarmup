@@ -21,6 +21,7 @@ protected:
 	const Scene* p_scene = nullptr;
 	float LightThreshold = 0.02f;
 
+
 public:
 	RayTracer(Scene* scene) : p_scene(scene) {}
 	~RayTracer(){}

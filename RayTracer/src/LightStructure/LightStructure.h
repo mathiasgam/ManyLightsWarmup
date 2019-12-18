@@ -4,7 +4,7 @@
 
 #include "PointLight.h"
 #include "Vec3f.h"
-#include "HitInfo.h"
+#include "RayTracer/HitInfo.h"
 
 
 /// interface for lights structures, for easy swapping between the two solutions

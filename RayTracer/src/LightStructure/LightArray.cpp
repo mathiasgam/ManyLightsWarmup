@@ -1,5 +1,5 @@
 #include "LightArray.h"
-#include "HitInfo.h"
+#include "RayTracer/HitInfo.h"
 
 void LightArray::init(std::vector<PointLight*> _lights)
 {

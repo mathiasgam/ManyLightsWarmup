@@ -37,7 +37,7 @@ Ray PinHoleCamera::sample(Vec2f f) const
 	Vec3f dir = direction * n + tangent_w * w * f[0] + tangent_h * h * f[1];
 	dir = dir.normalized();
 
-	return Ray(center, dir, 0, 10000);
+	return Ray(center, dir, 0, 10000, 0, 0, Vec3f(0.0f));
 }
 
 void PinHoleCamera::LookAt(Vec3f at)

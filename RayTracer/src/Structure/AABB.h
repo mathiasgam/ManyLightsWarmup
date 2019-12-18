@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Vec3f.h"
-#include "Ray.h"
+#include "RayTracer/Ray.h"
 
 #include <vector>
 

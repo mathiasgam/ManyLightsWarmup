@@ -54,6 +54,8 @@ private:
 
 	PinHoleCamera cam = PinHoleCamera();
 
+	bool isReady = false;
+
 public: /// Public variables
 	const Vec3f background_color = Vec3f(0.1f, 0.2f, 0.15f);
 	const float scene_epsilon = 0.0001f;
@@ -87,6 +89,9 @@ public: /// Public Functions
 	const Material* GetMaterial(unsigned int index) const { return materials[index]; }
 
 	void prepare();
+	bool IsReady() { return isReady; }
+
+	const Structure& GetTraceStructure() { return BVHMesh; }
 
 	bool closest_hit(Ray& ray, HitInfo& hit) const { return BVHMesh.closest_hit(ray, hit); }
 	bool any_hit(Ray& ray) const { return BVHMesh.any_hit(ray); }

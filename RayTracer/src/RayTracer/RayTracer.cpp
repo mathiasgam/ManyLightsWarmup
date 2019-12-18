@@ -19,7 +19,7 @@ Vec3f RayTracer::SampleLights(const HitInfo& hit, const Vec3f& material, int& nu
 		if (material_term.element_sum() == 0.0f)
 			continue;
 
-		Ray shadow = Ray(hit.position, dir, epsilon, dist - epsilon);
+		Ray shadow = Ray(hit.position, dir, epsilon, dist - epsilon, 0, 0, Vec3f(0.0f));
 		if (!Occluded(shadow)) {
 			res += material_term * (light->color / (dist * dist));
 		}

@@ -3,8 +3,8 @@
 #include "Geometry.h"
 
 #include "Vec3f.h"
-#include "Ray.h"
-#include "HitInfo.h"
+#include "RayTracer/Ray.h"
+#include "RayTracer/HitInfo.h"
 #include "Structure/AABB.h"
 
 class Sphere: Geometry

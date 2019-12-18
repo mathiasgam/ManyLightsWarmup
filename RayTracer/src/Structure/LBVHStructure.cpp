@@ -72,7 +72,7 @@ void LBVHStructure::init(const std::vector<const Geometry*>& _geometry, const st
 
 bool LBVHStructure::closest_hit(Ray& ray, HitInfo& hit) const
 {
-	Vec3f dirfrac = Vec3f(1.0f / ray.direction[0], 1.0f / ray.direction[1], 1.0f / ray.direction[2]);
+	Vec3f dirfrac = 1.0f / ray.direction;
 	bool hashit = closest_plane(ray, hit, dirfrac);
 	if (closest_hit_recurse(ray, hit, *root, dirfrac))
 		hashit = true;
@@ -81,7 +81,7 @@ bool LBVHStructure::closest_hit(Ray& ray, HitInfo& hit) const
 
 bool LBVHStructure::any_hit(Ray& ray) const
 {
-	Vec3f dirfrac = Vec3f(1.0f / ray.direction[0], 1.0f / ray.direction[1], 1.0f / ray.direction[2]);
+	Vec3f dirfrac = 1.0f / ray.direction;
 	if (any_plane(ray, dirfrac))
 		return true;
 	return any_hit_recurse(ray, *root, dirfrac);
@@ -166,6 +166,33 @@ bool LBVHStructure::any_plane(Ray&ray, Vec3f& dirfrac) const
 		}
 	}
 	return false;
+}
+
+void LBVHStructure::closest_hit(std::vector<Ray>& rays, std::vector<HitInfo>& hits) const
+{
+	const size_t N = rays.size();
+	for (int i = 0; i < N; i++) {
+		Ray& ray = rays[i];
+		HitInfo& hit = hits[i];
+		Vec3f dirfrac = 1.0f / ray.direction;
+		ray.hashit = closest_plane(ray, hit, dirfrac);
+		ray.hashit |= closest_hit_recurse(ray, hit, *root, dirfrac);
+	}
+}
+
+void LBVHStructure::closest_hit_recurse(std::vector<Ray>& rays, std::vector<HitInfo>& hits) const
+{
+}
+
+void LBVHStructure::any_hit(std::vector<Ray>& rays) const
+{
+	const size_t N = rays.size();
+	for (int i = 0; i < N; i++) {
+		Ray& ray = rays[i];
+		Vec3f dirfrac = 1.0f / ray.direction;
+		ray.hashit = any_plane(ray, dirfrac);
+		ray.hashit |= any_hit_recurse(ray, *root, dirfrac);
+	}
 }
 
 LBVHStructure::Node* LBVHStructure::generateHierarchy(std::vector<Primitive>& sortedPrimitives, int first, int last)

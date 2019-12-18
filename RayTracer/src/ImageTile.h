@@ -13,13 +13,13 @@ private:
 
 public:
 
-	const size_t offsetX;
-	const size_t offsetY;
-	const size_t sizeX;
-	const size_t sizeY;
+	const unsigned int offsetX;
+	const unsigned int offsetY;
+	const unsigned int sizeX;
+	const unsigned int sizeY;
 
 
-	ImageTile(size_t offsetX, size_t offsetY, size_t sizeX, size_t sizeY);
+	ImageTile(unsigned int offsetX, unsigned int offsetY, unsigned int sizeX, unsigned int sizeY);
 	~ImageTile();
 
 	void SetPixel(unsigned int x, unsigned int y, Vec3f value);

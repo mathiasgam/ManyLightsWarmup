@@ -2,7 +2,7 @@
 #include "Structure.h"
 
 #include "Geometry/Sphere.h"
-#include "HitInfo.h"
+#include "RayTracer/HitInfo.h"
 
 #include <vector>
 

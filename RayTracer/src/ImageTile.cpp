@@ -1,9 +1,10 @@
 #include "ImageTile.h"
 
-ImageTile::ImageTile(size_t offsetX, size_t offsetY, size_t sizeX, size_t sizeY):
+ImageTile::ImageTile(unsigned int offsetX, unsigned int offsetY, unsigned int sizeX, unsigned int sizeY):
 	offsetX(offsetX), offsetY(offsetY), sizeX(sizeX), sizeY(sizeY)
 {
-	m_data = std::vector<Vec3f>(sizeX * sizeY);
+	m_data = std::vector<Vec3f>();
+	m_data.resize(sizeX * sizeY);
 }
 
 ImageTile::~ImageTile()

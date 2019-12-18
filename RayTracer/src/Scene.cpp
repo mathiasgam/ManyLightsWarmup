@@ -20,22 +20,26 @@ Scene::~Scene()
 
 void Scene::AddMesh(const TriMesh* trimesh, const Vec3f color, Vec3f transform)
 {
+	isReady = false;
 	std::cerr << "TriMesh Direct Loading not supported!" << std::endl;
 }
 
 void Scene::AddPoint(const Vec3f position, const float radius)
 {
+	isReady = false;
 	Point* p = new Point(position, radius);
 	visuals.push_back(p);
 }
 
 void Scene::AddLine(const Vec3f p1, const Vec3f p2, const float radius, Vec3f color) {
+	isReady = false;
 	Line* l = new Line(p1, p2, radius, color);
 	visuals.push_back(l);
 }
 
 void Scene::AddPlane(const Vec3f position, const Vec3f color, const Vec3f normal)
 {
+	isReady = false;
 	Plane* plane = new Plane(position, normal);
 	plane->color = color;
 	planes.push_back(plane);
@@ -43,12 +47,14 @@ void Scene::AddPlane(const Vec3f position, const Vec3f color, const Vec3f normal
 
 void Scene::AddLight(const Vec3f position, const Vec3f color)
 {
+	isReady = false;
 	PointLight* light = new PointLight(position, color);
 	lights.push_back(light);
 }
 
 void Scene::LoadMTL(const std::string_view filename, const std::string_view basepath)
 {
+	isReady = false;
 	std::string fullPath = basepath.data();
 	fullPath += filename.data();
 	std::ifstream file(fullPath);
@@ -147,6 +153,7 @@ void Scene::LoadMTL(const std::string_view filename, const std::string_view base
 
 void Scene::LoadOBJFile(const std::string_view filename, const std::string_view basepath)
 {
+	isReady = false;
 	std::string full_path = basepath.data();
 	full_path += filename.data();
 	std::ifstream file(full_path);
@@ -228,6 +235,7 @@ void Scene::LoadOBJFile(const std::string_view filename, const std::string_view 
 
 void Scene::LoadScene(const std::string_view filename, const std::string_view basepath)
 {
+	isReady = false;
 	std::cout << "Loading scene: \"" << filename << "\", from: \"" << basepath << "\"" << std::endl;
 	std::string fullPath = basepath.data();
 	fullPath += filename.data();
@@ -324,6 +332,8 @@ void Scene::prepare()
 	BVHMesh.init(meshes, planes);
 	std::vector<const Plane*> tmp = std::vector<const Plane*>();
 	BVHVisuals.init(visuals, tmp);
+
+	isReady = true;
 }
 
 void Scene::SetAmbient(const Vec3f& color)
