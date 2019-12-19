@@ -61,6 +61,8 @@ std::vector<PointLight*> LightTree::GetLights(const HitInfo& hit, float threshol
 
 	while (queue.size() < 1000) {
 		NodeCut cut = queue.top();
+		if (cut.node->type == NodeType::Leaf)
+			break;
 
 		//std::cout << "Error: " << cut.error << std::endl;
 #if RANDOM_THRESHOLD

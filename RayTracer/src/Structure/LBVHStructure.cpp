@@ -176,7 +176,7 @@ void LBVHStructure::closest_hit(std::vector<Ray>& rays, std::vector<HitInfo>& hi
 		std::cout << "structure empty!" << std::endl;
 	}
 	std::atomic<unsigned int> count(0);
-	std::for_each(std::execution::par_unseq ,rays.begin(), rays.end(), [=, &count, &rays, &hits](Ray& r) {
+	std::for_each(std::execution::par ,rays.begin(), rays.end(), [=, &count, &rays, &hits](Ray& r) {
 		unsigned int i = count++;
 		Ray& ray = rays[i];
 		HitInfo& hit = hits[i];

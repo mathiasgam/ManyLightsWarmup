@@ -79,7 +79,7 @@ void prepareScene(Scene* scene) {
 	//scene->AddLight(Vec3f(24, 10, 0), light_color * 100);
 
 	const int clusters = 1;
-	const int per_cluster = 10000;
+	const int per_cluster = 100;
 	const int num_lights = clusters * per_cluster;
 	
 	/*
@@ -312,8 +312,8 @@ int main() {
 	//cam.SetPosition(Vec3f(10.0f, 1.7f, 0.0f)); // sponza
 	//cam.LookAt(Vec3f(0.0f, 3.0f, 0.0f));
 
-	cam.SetPosition(Vec3f(10.0f, 10.0f, 10.0f)); // sponza
-	cam.LookAt(Vec3f(0.0f, 1.0f, 0.0f));
+	//cam.SetPosition(Vec3f(10.0f, 10.0f, 10.0f)); // sponza
+	//cam.LookAt(Vec3f(0.0f, 1.0f, 0.0f));
 
 	RayTracer* tracer = new RayTracer(scene);
 	tracer->SetLightThreshold(scene->GetThreshold());

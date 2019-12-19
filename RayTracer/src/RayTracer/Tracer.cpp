@@ -9,7 +9,7 @@
 #include "Shader/lambertian.h"
 #include "Sampling.h"
 
-Tracer::Tracer() : mutex_queue(), rayQueue(), result(1920,1080)
+Tracer::Tracer() : mutex_queue(), rayQueue(), result(1920, 1080)
 {
 }
 
@@ -28,6 +28,12 @@ void Tracer::push(Ray ray)
 	rayQueue.push_back(ray);
 }
 
+void Tracer::push(std::list<Ray> rays)
+{
+	const std::lock_guard<std::mutex> lock(mutex_queue);
+	rayQueue.splice(rayQueue.end(), rays);
+}
+
 
 void Tracer::trace()
 {
@@ -44,13 +50,18 @@ void Tracer::trace()
 
 	while (!rayQueue.empty()) {
 		{// swap the rays in the queue to thge active trace buffer
+			std::cout << "Swapping buffers" << std::endl;
 			const std::lock_guard<std::mutex> lock(mutex_queue);
 			trace_rays.resize(rayQueue.size());
+			std::copy(rayQueue.begin(), rayQueue.end(), trace_rays.begin());
+
+			/*
 			std::atomic<unsigned int> count(0);
-			std::for_each(std::execution::par_unseq, rayQueue.begin(), rayQueue.end(), [&trace_rays, &count](Ray& ray) {
+			std::for_each(std::execution::seq, rayQueue.begin(), rayQueue.end(), [&trace_rays, &count](Ray& ray) {
 				unsigned int i = count++;
-				trace_rays[i] = Ray(ray);
+				trace_rays[i] = ray;
 			});
+			*/
 			rayQueue.clear();
 		}
 		unsigned int N = trace_rays.size();
@@ -59,12 +70,13 @@ void Tracer::trace()
 
 		// initialize hit infos
 		hits.resize(trace_rays.size());
-		std::for_each(std::execution::par_unseq, hits.begin(), hits.end(), [](HitInfo& hit) {
-			hit = HitInfo();
-		});
-
-		// TODO implement rest of function
-		//assert(false);
+		{
+			std::atomic<unsigned int> count(0);
+			std::for_each(std::execution::par, hits.begin(), hits.end(), [&hits, &count](HitInfo& hit) {
+				const unsigned int i = count++;
+				hits[i] = HitInfo();
+			});
+		}
 
 		// trace all current rays
 		std::cout << "Tracing rays" << std::endl;
@@ -72,14 +84,16 @@ void Tracer::trace()
 
 		std::cout << "Shading hits" << std::endl;
 		// evaluate hits and generate new rays if needed
-		std::atomic<unsigned int> count(0);
-		std::for_each(std::execution::par_unseq, trace_rays.begin(), trace_rays.end(), [=,&count, &hits, &trace_rays](Ray& r) {
-			unsigned int index = count++;
-			shade(trace_rays[index], hits[index]);
-		});
-		
-		trace_rays.clear();
-		hits.clear();
+		{
+			std::atomic<unsigned int> count(0);
+			std::for_each(std::execution::par, trace_rays.begin(), trace_rays.end(), [=, &count, &hits, &trace_rays](Ray& r) {
+				unsigned int index = count++;
+				shade(trace_rays[index], hits[index]);
+			});
+		}
+
+		//trace_rays.clear();
+		//hits.clear();
 	}
 	std::cout << "Trace done!" << std::endl;
 }
@@ -87,12 +101,34 @@ void Tracer::trace()
 void Tracer::shade(Ray & ray, HitInfo & hit)
 {
 	if (ray.depth == 0) {
-		for (int i = 0; i < 10; i++) {
-			Vec3f dir = SampleCosineSphere();
-			rotate_to_normal(hit.normal, dir);
+		if (ray.hashit) {
+			
+			const Material* mat = p_scene->GetMaterial(hit.material_index);
+			hit.p_material = mat;
 
-			Ray sample = Ray(hit.position, dir, 0.001f, 1000, ray.depth + 1, ray.pixel, ray.throughput * 0.1f);
-			push(sample);
+			auto lights = p_scene->GetLights(hit, 0.02f);
+			unsigned int N = lights.size();
+
+			std::list<Ray> rays = std::list<Ray>();
+
+			for (int i = 0; i < N; i++) {
+				auto& light = lights[i];
+				Vec3f diff = light->position - hit.position;
+				Vec3f dir = diff.normalized();
+				float dist = diff.length();
+
+
+				Vec3f material_term = mat->diffuse * max(0.0f, dot(hit.normal, dir));
+				if (material_term.element_sum() == 0.0f)
+					continue;
+
+				Vec3f contribution = material_term * (light->color / (dist * dist) * ray.throughput);
+				Ray sample = Ray(hit.position, dir, 0.0001f, dist - 0.0001f, ray.depth + 1, ray.pixel, contribution);
+				rays.push_back(sample);
+			}
+			//result.add(ray.pixel, max(Vec3f(0.0f), min(Vec3f(1.0f), hit.position)));
+			//result.add(ray.pixel, (float)N / 10);
+			push(rays);
 		}
 	}
 	else {

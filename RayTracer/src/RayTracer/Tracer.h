@@ -25,6 +25,7 @@ public:
 	void setScene(Scene* scene);
 
 	void push(Ray ray);
+	void push(std::list<Ray> rays);
 	void trace();
 	void shade(Ray& ray, HitInfo& hit);
 

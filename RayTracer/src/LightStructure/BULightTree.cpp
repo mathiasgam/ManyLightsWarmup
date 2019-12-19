@@ -88,56 +88,60 @@ void BULightTree::init(std::vector<PointLight*> lights)
 	//root = *clusters.begin();
 }
 
-std::vector<PointLight*> BULightTree::GetLights(const HitInfo& hit, float threshold) const
+std::vector<PointLight*> BULightTree::GetLights(const HitInfo & hit, float threshold) const
 {
 	std::vector<PointLight*> lights = std::vector<PointLight*>();
-Vec3f total_radiance = Vec3f(0.0f);
-std::priority_queue<NodeCut, std::vector<NodeCut>, NodeCutCompare> queue = std::priority_queue<NodeCut, std::vector<NodeCut>, NodeCutCompare>();
+	Vec3f total_radiance = Vec3f(0.0f);
+	std::priority_queue<NodeCut, std::vector<NodeCut>, NodeCutCompare> queue = std::priority_queue<NodeCut, std::vector<NodeCut>, NodeCutCompare>();
 
-// push the root node to the queue
-for (LightNode* n : light_forest) {
-	NodeCut root = CreateNodeCut(n, hit);
-	queue.push(root);
-	total_radiance += root.radiance;
-}
+	// push the root node to the queue
+	for (LightNode* n : light_forest) {
+		if (n != nullptr) {
+			NodeCut root = CreateNodeCut(n, hit);
+			queue.push(root);
+			total_radiance += root.radiance;
+		}
+	}
 
-while (queue.size() < 1000) {
-	NodeCut cut = queue.top();
+	while (queue.size() < 1000) {
+		NodeCut cut = queue.top();
+		if (cut.node->type == NodeType::Leaf)
+			break;
 
-	//std::cout << "Error: " << cut.error << std::endl;
+		//std::cout << "Error: " << cut.error << std::endl;
 #if RANDOM_THRESHOLD
-	if ((cut.error - total_radiance * threshold * random(0.9f, 1.1)).max_componont() > 0.0f) {
+		if ((cut.error - total_radiance * threshold * random(0.9f, 1.1)).max_componont() > 0.0f) {
 #else
-	if ((cut.error - total_radiance * threshold).max_componont() > 0.0f) {
+		if ((cut.error - total_radiance * threshold).max_componont() > 0.0f) {
 #endif
+			queue.pop();
+			total_radiance -= cut.radiance;
+
+			NodeCut A = CreateNodeCut(cut.node->ChildA, hit);
+			NodeCut B = CreateNodeCut(cut.node->ChildB, hit);
+			total_radiance += A.radiance + B.radiance;
+
+			//std::cout << "Prev error: " << cut.errorsum << ", new error: " << A.errorsum + B.errorsum << std::endl;
+
+			queue.push(A);
+			queue.push(B);
+		}
+		else {
+			// if the worst error is less than the permitted error, theres no reason to refine more clusters
+			//std::cout << "threshold reached: " << cut.errorsum << std::endl;
+			break;
+		}
+
+		}
+	size_t N = queue.size();
+	lights.resize(N);
+	//std::cout << "Num lights: " << N << ", max error: " << queue.top().errorsum << std::endl;
+	for (int i = 0; i < N; i++) {
+		lights[i] = queue.top().node->reprecentative;
 		queue.pop();
-		total_radiance -= cut.radiance;
-
-		NodeCut A = CreateNodeCut(cut.node->ChildA, hit);
-		NodeCut B = CreateNodeCut(cut.node->ChildB, hit);
-		total_radiance += A.radiance + B.radiance;
-
-		//std::cout << "Prev error: " << cut.errorsum << ", new error: " << A.errorsum + B.errorsum << std::endl;
-
-		queue.push(A);
-		queue.push(B);
-	}
-	else {
-		// if the worst error is less than the permitted error, theres no reason to refine more clusters
-		//std::cout << "threshold reached: " << cut.errorsum << std::endl;
-		break;
 	}
 
-}
-size_t N = queue.size();
-lights.resize(N);
-//std::cout << "Num lights: " << N << ", max error: " << queue.top().errorsum << std::endl;
-for (int i = 0; i < N; i++) {
-	lights[i] = queue.top().node->reprecentative;
-	queue.pop();
-}
-
-return lights;
+	return lights;
 }
 
 std::vector<Line> BULightTree::GetTreeEdges() const
