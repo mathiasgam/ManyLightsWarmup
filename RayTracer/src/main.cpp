@@ -354,12 +354,15 @@ int main() {
 	Tracer main_tracer = Tracer();
 	main_tracer.setScene(scene);
 
-	auto rays = cam.generateRays(Vec2ui(width, height), 1);
+	auto rays = cam.generateRays(Vec2ui(1920, 1080), 1);
 
 	for (auto& ray : rays) {
 		main_tracer.push(ray);
 	}
 	main_tracer.trace();
+
+	auto& result = main_tracer.getResult();
+	result.save_as("TestImage.png");
 	/*
 
 	struct Report {

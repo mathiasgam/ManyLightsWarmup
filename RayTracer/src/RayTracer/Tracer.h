@@ -1,5 +1,6 @@
 #pragma once
 
+#include <list>
 #include <vector>
 #include <mutex>
 
@@ -13,7 +14,7 @@ class Tracer
 private:
 
 	std::mutex mutex_queue;
-	std::vector<Ray> rayQueue;
+	std::list<Ray> rayQueue;
 	Image result;
 	Scene* p_scene = nullptr;
 
@@ -25,8 +26,9 @@ public:
 
 	void push(Ray ray);
 	void trace();
+	void shade(Ray& ray, HitInfo& hit);
 
-	Image getResult();
+	Image& getResult();
 
 private:
 

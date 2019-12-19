@@ -3,6 +3,8 @@
 
 #include <vector>
 #include <cassert>
+#include <algorithm>
+#include <execution>
 
 
 void Image::setPixel(const unsigned int x, const unsigned int y, Vec3f rgb)
@@ -11,6 +13,7 @@ void Image::setPixel(const unsigned int x, const unsigned int y, Vec3f rgb)
 	assert(x >= 0 && x < res[0]);
 	assert(y >= 0 && y < res[1]);
 	const unsigned int index = y * res[0] + x;
+	std::lock_guard<std::mutex> lock(m);
 	data[index] = Vec4f(rgb[0], rgb[1], rgb[2], 1.0f);
 }
 
@@ -19,11 +22,19 @@ void Image::setPixel(const unsigned int x, const unsigned int y, Vec4f rgba)
 	assert(x > res[0]);
 	assert(y > res[1]);
 	const unsigned int index = y * res[0] + x;
+	std::lock_guard<std::mutex> lock(m);
 	data[index] = rgba;
+}
+
+void Image::add(const unsigned int i, const Vec3f rgb)
+{
+	std::lock_guard<std::mutex> lock(m);
+	data[i] += Vec4f(rgb[0], rgb[1], rgb[2], 0.0f);
 }
 
 void Image::save_as(const char *filename)
 {
+	std::lock_guard<std::mutex> lock(m);
 	std::vector<unsigned char> tmp = std::vector<unsigned char>();
 
 	int size = res[0] * res[1];
@@ -44,11 +55,13 @@ void Image::save_as(const char *filename)
 	if (error) std::cout << "encoder error " << error << ": " << lodepng_error_text(error) << std::endl;
 }
 
-Image::Image(const unsigned int width, const unsigned int height)
+Image::Image(const unsigned int width, const unsigned int height) : m(), res(width, height), data()
 {
-	res = Vec2ui(width, height);
-	data = std::vector<Vec4f>();
+	std::lock_guard<std::mutex> lock(m);
 	data.resize(width * height);
+	std::for_each(std::execution::par_unseq,data.begin(), data.end(), [](Vec4f& pixel) {
+		pixel = Vec4f(0.0f, 0.0f, 0.0f, 1.0f);
+	});
 }
 
 Image::~Image()

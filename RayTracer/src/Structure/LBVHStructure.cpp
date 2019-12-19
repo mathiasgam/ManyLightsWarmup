@@ -171,13 +171,19 @@ bool LBVHStructure::any_plane(Ray&ray, Vec3f& dirfrac) const
 void LBVHStructure::closest_hit(std::vector<Ray>& rays, std::vector<HitInfo>& hits) const
 {
 	const size_t N = rays.size();
-	for (int i = 0; i < N; i++) {
+	std::cout << "Tracing " << N << " rays!" << std::endl;
+	if (root == nullptr) {
+		std::cout << "structure empty!" << std::endl;
+	}
+	std::atomic<unsigned int> count(0);
+	std::for_each(std::execution::par_unseq ,rays.begin(), rays.end(), [=, &count, &rays, &hits](Ray& r) {
+		unsigned int i = count++;
 		Ray& ray = rays[i];
 		HitInfo& hit = hits[i];
 		Vec3f dirfrac = 1.0f / ray.direction;
 		ray.hashit = closest_plane(ray, hit, dirfrac);
 		ray.hashit |= closest_hit_recurse(ray, hit, *root, dirfrac);
-	}
+	});
 }
 
 void LBVHStructure::closest_hit_recurse(std::vector<Ray>& rays, std::vector<HitInfo>& hits) const
