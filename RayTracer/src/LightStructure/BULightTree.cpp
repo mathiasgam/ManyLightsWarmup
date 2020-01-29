@@ -242,6 +242,7 @@ void BULightTree::BuildTree(std::unordered_set<LightNode*>& clusters)
 	// map for accelerating distance calculation.
 	//std::unordered_map<std::pair<LightNode*, LightNode*>, float, hash_pair> umap = std::unordered_map<std::pair<LightNode*, LightNode*>, float, hash_pair>();
 
+	
 	while (graph.edges.size() > 1) {
 		//float best = std::numeric_limits<float>::infinity();
 
@@ -280,6 +281,7 @@ void BULightTree::BuildTree(std::unordered_set<LightNode*>& clusters)
 				light = new PointLight(pos, color);
 				ReprecentativeLights.push_back(light);
 				left->node = node;
+				//left->is_alive = false;
 				right->is_alive = false;
 				//AdjacencyMatrix.insert(std::make_pair(node, AdjacencyMatrix[left]));
 			}
@@ -290,6 +292,7 @@ void BULightTree::BuildTree(std::unordered_set<LightNode*>& clusters)
 				ReprecentativeLights.push_back(light);
 				right->node = node;
 				left->is_alive = false;
+				//right->is_alive = false;
 				//AdjacencyMatrix.insert(std::make_pair(node, AdjacencyMatrix[right]));
 			}
 
